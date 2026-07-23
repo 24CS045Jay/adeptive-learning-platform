@@ -12,6 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StudentRouteImport } from './routes/student'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StudentIndexRouteImport } from './routes/student.index'
+import { Route as StudentSearchRouteImport } from './routes/student.search'
+import { Route as StudentQuizzesRouteImport } from './routes/student.quizzes'
+import { Route as StudentPlannerRouteImport } from './routes/student.planner'
+import { Route as StudentBookmarksRouteImport } from './routes/student.bookmarks'
+import { Route as StudentAskRouteImport } from './routes/student.ask'
+import { Route as StudentAnnouncementsRouteImport } from './routes/student.announcements'
 
 const StudentRoute = StudentRouteImport.update({
   id: '/student',
@@ -28,28 +34,103 @@ const StudentIndexRoute = StudentIndexRouteImport.update({
   path: '/',
   getParentRoute: () => StudentRoute,
 } as any)
+const StudentSearchRoute = StudentSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentQuizzesRoute = StudentQuizzesRouteImport.update({
+  id: '/quizzes',
+  path: '/quizzes',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentPlannerRoute = StudentPlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentBookmarksRoute = StudentBookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentAskRoute = StudentAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentAnnouncementsRoute = StudentAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => StudentRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/student': typeof StudentRouteWithChildren
+  '/student/announcements': typeof StudentAnnouncementsRoute
+  '/student/ask': typeof StudentAskRoute
+  '/student/bookmarks': typeof StudentBookmarksRoute
+  '/student/planner': typeof StudentPlannerRoute
+  '/student/quizzes': typeof StudentQuizzesRoute
+  '/student/search': typeof StudentSearchRoute
   '/student/': typeof StudentIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/student/announcements': typeof StudentAnnouncementsRoute
+  '/student/ask': typeof StudentAskRoute
+  '/student/bookmarks': typeof StudentBookmarksRoute
+  '/student/planner': typeof StudentPlannerRoute
+  '/student/quizzes': typeof StudentQuizzesRoute
+  '/student/search': typeof StudentSearchRoute
   '/student': typeof StudentIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/student': typeof StudentRouteWithChildren
+  '/student/announcements': typeof StudentAnnouncementsRoute
+  '/student/ask': typeof StudentAskRoute
+  '/student/bookmarks': typeof StudentBookmarksRoute
+  '/student/planner': typeof StudentPlannerRoute
+  '/student/quizzes': typeof StudentQuizzesRoute
+  '/student/search': typeof StudentSearchRoute
   '/student/': typeof StudentIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/student' | '/student/'
+  fullPaths:
+    | '/'
+    | '/student'
+    | '/student/announcements'
+    | '/student/ask'
+    | '/student/bookmarks'
+    | '/student/planner'
+    | '/student/quizzes'
+    | '/student/search'
+    | '/student/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/student'
-  id: '__root__' | '/' | '/student' | '/student/'
+  to:
+    | '/'
+    | '/student/announcements'
+    | '/student/ask'
+    | '/student/bookmarks'
+    | '/student/planner'
+    | '/student/quizzes'
+    | '/student/search'
+    | '/student'
+  id:
+    | '__root__'
+    | '/'
+    | '/student'
+    | '/student/announcements'
+    | '/student/ask'
+    | '/student/bookmarks'
+    | '/student/planner'
+    | '/student/quizzes'
+    | '/student/search'
+    | '/student/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -80,14 +161,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentIndexRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/student/search': {
+      id: '/student/search'
+      path: '/search'
+      fullPath: '/student/search'
+      preLoaderRoute: typeof StudentSearchRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/quizzes': {
+      id: '/student/quizzes'
+      path: '/quizzes'
+      fullPath: '/student/quizzes'
+      preLoaderRoute: typeof StudentQuizzesRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/planner': {
+      id: '/student/planner'
+      path: '/planner'
+      fullPath: '/student/planner'
+      preLoaderRoute: typeof StudentPlannerRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/bookmarks': {
+      id: '/student/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/student/bookmarks'
+      preLoaderRoute: typeof StudentBookmarksRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/ask': {
+      id: '/student/ask'
+      path: '/ask'
+      fullPath: '/student/ask'
+      preLoaderRoute: typeof StudentAskRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/announcements': {
+      id: '/student/announcements'
+      path: '/announcements'
+      fullPath: '/student/announcements'
+      preLoaderRoute: typeof StudentAnnouncementsRouteImport
+      parentRoute: typeof StudentRoute
+    }
   }
 }
 
 interface StudentRouteChildren {
+  StudentAnnouncementsRoute: typeof StudentAnnouncementsRoute
+  StudentAskRoute: typeof StudentAskRoute
+  StudentBookmarksRoute: typeof StudentBookmarksRoute
+  StudentPlannerRoute: typeof StudentPlannerRoute
+  StudentQuizzesRoute: typeof StudentQuizzesRoute
+  StudentSearchRoute: typeof StudentSearchRoute
   StudentIndexRoute: typeof StudentIndexRoute
 }
 
 const StudentRouteChildren: StudentRouteChildren = {
+  StudentAnnouncementsRoute: StudentAnnouncementsRoute,
+  StudentAskRoute: StudentAskRoute,
+  StudentBookmarksRoute: StudentBookmarksRoute,
+  StudentPlannerRoute: StudentPlannerRoute,
+  StudentQuizzesRoute: StudentQuizzesRoute,
+  StudentSearchRoute: StudentSearchRoute,
   StudentIndexRoute: StudentIndexRoute,
 }
 
