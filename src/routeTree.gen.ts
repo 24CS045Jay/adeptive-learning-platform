@@ -10,18 +10,32 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StudentRouteImport } from './routes/student'
+import { Route as FacultyRouteImport } from './routes/faculty'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StudentIndexRouteImport } from './routes/student.index'
+import { Route as FacultyIndexRouteImport } from './routes/faculty.index'
 import { Route as StudentSearchRouteImport } from './routes/student.search'
 import { Route as StudentQuizzesRouteImport } from './routes/student.quizzes'
 import { Route as StudentPlannerRouteImport } from './routes/student.planner'
 import { Route as StudentBookmarksRouteImport } from './routes/student.bookmarks'
 import { Route as StudentAskRouteImport } from './routes/student.ask'
 import { Route as StudentAnnouncementsRouteImport } from './routes/student.announcements'
+import { Route as FacultyUploadRouteImport } from './routes/faculty.upload'
+import { Route as FacultyQuizzesRouteImport } from './routes/faculty.quizzes'
+import { Route as FacultyQueriesRouteImport } from './routes/faculty.queries'
+import { Route as FacultyEscalationsRouteImport } from './routes/faculty.escalations'
+import { Route as FacultyDocumentsRouteImport } from './routes/faculty.documents'
+import { Route as FacultyAnnouncementsRouteImport } from './routes/faculty.announcements'
+import { Route as FacultyAnalyticsRouteImport } from './routes/faculty.analytics'
 
 const StudentRoute = StudentRouteImport.update({
   id: '/student',
   path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/faculty',
+  path: '/faculty',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -33,6 +47,11 @@ const StudentIndexRoute = StudentIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => StudentRoute,
+} as any)
+const FacultyIndexRoute = FacultyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FacultyRoute,
 } as any)
 const StudentSearchRoute = StudentSearchRouteImport.update({
   id: '/search',
@@ -64,77 +83,165 @@ const StudentAnnouncementsRoute = StudentAnnouncementsRouteImport.update({
   path: '/announcements',
   getParentRoute: () => StudentRoute,
 } as any)
+const FacultyUploadRoute = FacultyUploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyQuizzesRoute = FacultyQuizzesRouteImport.update({
+  id: '/quizzes',
+  path: '/quizzes',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyQueriesRoute = FacultyQueriesRouteImport.update({
+  id: '/queries',
+  path: '/queries',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyEscalationsRoute = FacultyEscalationsRouteImport.update({
+  id: '/escalations',
+  path: '/escalations',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyDocumentsRoute = FacultyDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyAnnouncementsRoute = FacultyAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyAnalyticsRoute = FacultyAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => FacultyRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/faculty': typeof FacultyRouteWithChildren
   '/student': typeof StudentRouteWithChildren
+  '/faculty/analytics': typeof FacultyAnalyticsRoute
+  '/faculty/announcements': typeof FacultyAnnouncementsRoute
+  '/faculty/documents': typeof FacultyDocumentsRoute
+  '/faculty/escalations': typeof FacultyEscalationsRoute
+  '/faculty/queries': typeof FacultyQueriesRoute
+  '/faculty/quizzes': typeof FacultyQuizzesRoute
+  '/faculty/upload': typeof FacultyUploadRoute
   '/student/announcements': typeof StudentAnnouncementsRoute
   '/student/ask': typeof StudentAskRoute
   '/student/bookmarks': typeof StudentBookmarksRoute
   '/student/planner': typeof StudentPlannerRoute
   '/student/quizzes': typeof StudentQuizzesRoute
   '/student/search': typeof StudentSearchRoute
+  '/faculty/': typeof FacultyIndexRoute
   '/student/': typeof StudentIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/faculty/analytics': typeof FacultyAnalyticsRoute
+  '/faculty/announcements': typeof FacultyAnnouncementsRoute
+  '/faculty/documents': typeof FacultyDocumentsRoute
+  '/faculty/escalations': typeof FacultyEscalationsRoute
+  '/faculty/queries': typeof FacultyQueriesRoute
+  '/faculty/quizzes': typeof FacultyQuizzesRoute
+  '/faculty/upload': typeof FacultyUploadRoute
   '/student/announcements': typeof StudentAnnouncementsRoute
   '/student/ask': typeof StudentAskRoute
   '/student/bookmarks': typeof StudentBookmarksRoute
   '/student/planner': typeof StudentPlannerRoute
   '/student/quizzes': typeof StudentQuizzesRoute
   '/student/search': typeof StudentSearchRoute
+  '/faculty': typeof FacultyIndexRoute
   '/student': typeof StudentIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/faculty': typeof FacultyRouteWithChildren
   '/student': typeof StudentRouteWithChildren
+  '/faculty/analytics': typeof FacultyAnalyticsRoute
+  '/faculty/announcements': typeof FacultyAnnouncementsRoute
+  '/faculty/documents': typeof FacultyDocumentsRoute
+  '/faculty/escalations': typeof FacultyEscalationsRoute
+  '/faculty/queries': typeof FacultyQueriesRoute
+  '/faculty/quizzes': typeof FacultyQuizzesRoute
+  '/faculty/upload': typeof FacultyUploadRoute
   '/student/announcements': typeof StudentAnnouncementsRoute
   '/student/ask': typeof StudentAskRoute
   '/student/bookmarks': typeof StudentBookmarksRoute
   '/student/planner': typeof StudentPlannerRoute
   '/student/quizzes': typeof StudentQuizzesRoute
   '/student/search': typeof StudentSearchRoute
+  '/faculty/': typeof FacultyIndexRoute
   '/student/': typeof StudentIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/faculty'
     | '/student'
+    | '/faculty/analytics'
+    | '/faculty/announcements'
+    | '/faculty/documents'
+    | '/faculty/escalations'
+    | '/faculty/queries'
+    | '/faculty/quizzes'
+    | '/faculty/upload'
     | '/student/announcements'
     | '/student/ask'
     | '/student/bookmarks'
     | '/student/planner'
     | '/student/quizzes'
     | '/student/search'
+    | '/faculty/'
     | '/student/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/faculty/analytics'
+    | '/faculty/announcements'
+    | '/faculty/documents'
+    | '/faculty/escalations'
+    | '/faculty/queries'
+    | '/faculty/quizzes'
+    | '/faculty/upload'
     | '/student/announcements'
     | '/student/ask'
     | '/student/bookmarks'
     | '/student/planner'
     | '/student/quizzes'
     | '/student/search'
+    | '/faculty'
     | '/student'
   id:
     | '__root__'
     | '/'
+    | '/faculty'
     | '/student'
+    | '/faculty/analytics'
+    | '/faculty/announcements'
+    | '/faculty/documents'
+    | '/faculty/escalations'
+    | '/faculty/queries'
+    | '/faculty/quizzes'
+    | '/faculty/upload'
     | '/student/announcements'
     | '/student/ask'
     | '/student/bookmarks'
     | '/student/planner'
     | '/student/quizzes'
     | '/student/search'
+    | '/faculty/'
     | '/student/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FacultyRoute: typeof FacultyRouteWithChildren
   StudentRoute: typeof StudentRouteWithChildren
 }
 
@@ -145,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/student'
       fullPath: '/student'
       preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faculty': {
+      id: '/faculty'
+      path: '/faculty'
+      fullPath: '/faculty'
+      preLoaderRoute: typeof FacultyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -160,6 +274,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/student/'
       preLoaderRoute: typeof StudentIndexRouteImport
       parentRoute: typeof StudentRoute
+    }
+    '/faculty/': {
+      id: '/faculty/'
+      path: '/'
+      fullPath: '/faculty/'
+      preLoaderRoute: typeof FacultyIndexRouteImport
+      parentRoute: typeof FacultyRoute
     }
     '/student/search': {
       id: '/student/search'
@@ -203,8 +324,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentAnnouncementsRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/faculty/upload': {
+      id: '/faculty/upload'
+      path: '/upload'
+      fullPath: '/faculty/upload'
+      preLoaderRoute: typeof FacultyUploadRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/quizzes': {
+      id: '/faculty/quizzes'
+      path: '/quizzes'
+      fullPath: '/faculty/quizzes'
+      preLoaderRoute: typeof FacultyQuizzesRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/queries': {
+      id: '/faculty/queries'
+      path: '/queries'
+      fullPath: '/faculty/queries'
+      preLoaderRoute: typeof FacultyQueriesRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/escalations': {
+      id: '/faculty/escalations'
+      path: '/escalations'
+      fullPath: '/faculty/escalations'
+      preLoaderRoute: typeof FacultyEscalationsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/documents': {
+      id: '/faculty/documents'
+      path: '/documents'
+      fullPath: '/faculty/documents'
+      preLoaderRoute: typeof FacultyDocumentsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/announcements': {
+      id: '/faculty/announcements'
+      path: '/announcements'
+      fullPath: '/faculty/announcements'
+      preLoaderRoute: typeof FacultyAnnouncementsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/analytics': {
+      id: '/faculty/analytics'
+      path: '/analytics'
+      fullPath: '/faculty/analytics'
+      preLoaderRoute: typeof FacultyAnalyticsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
   }
 }
+
+interface FacultyRouteChildren {
+  FacultyAnalyticsRoute: typeof FacultyAnalyticsRoute
+  FacultyAnnouncementsRoute: typeof FacultyAnnouncementsRoute
+  FacultyDocumentsRoute: typeof FacultyDocumentsRoute
+  FacultyEscalationsRoute: typeof FacultyEscalationsRoute
+  FacultyQueriesRoute: typeof FacultyQueriesRoute
+  FacultyQuizzesRoute: typeof FacultyQuizzesRoute
+  FacultyUploadRoute: typeof FacultyUploadRoute
+  FacultyIndexRoute: typeof FacultyIndexRoute
+}
+
+const FacultyRouteChildren: FacultyRouteChildren = {
+  FacultyAnalyticsRoute: FacultyAnalyticsRoute,
+  FacultyAnnouncementsRoute: FacultyAnnouncementsRoute,
+  FacultyDocumentsRoute: FacultyDocumentsRoute,
+  FacultyEscalationsRoute: FacultyEscalationsRoute,
+  FacultyQueriesRoute: FacultyQueriesRoute,
+  FacultyQuizzesRoute: FacultyQuizzesRoute,
+  FacultyUploadRoute: FacultyUploadRoute,
+  FacultyIndexRoute: FacultyIndexRoute,
+}
+
+const FacultyRouteWithChildren =
+  FacultyRoute._addFileChildren(FacultyRouteChildren)
 
 interface StudentRouteChildren {
   StudentAnnouncementsRoute: typeof StudentAnnouncementsRoute
@@ -231,6 +426,7 @@ const StudentRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FacultyRoute: FacultyRouteWithChildren,
   StudentRoute: StudentRouteWithChildren,
 }
 export const routeTree = rootRouteImport
