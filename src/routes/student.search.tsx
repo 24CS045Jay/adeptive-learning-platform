@@ -2,13 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { PageHeader, Card, Pill } from "@/components/app-shell";
-import { documents, subjects } from "@/lib/mock-data";
+import { useAppData } from "@/lib/app-data-context";
 
 export const Route = createFileRoute("/student/search")({
   component: SearchNotes,
 });
 
 function SearchNotes() {
+  const { documents, subjects } = useAppData();
   const [q, setQ] = useState("");
   const results = documents.filter((d) => d.status === "approved" && (q === "" || d.name.toLowerCase().includes(q.toLowerCase())));
   return (

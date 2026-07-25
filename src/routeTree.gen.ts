@@ -9,43 +9,47 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as StudentRouteImport } from './routes/student'
-import { Route as FacultyRouteImport } from './routes/faculty'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as StudentIndexRouteImport } from './routes/student.index'
-import { Route as FacultyIndexRouteImport } from './routes/faculty.index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as FacultyRouteImport } from './routes/faculty'
+import { Route as StudentRouteImport } from './routes/student'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as StudentSearchRouteImport } from './routes/student.search'
-import { Route as StudentQuizzesRouteImport } from './routes/student.quizzes'
-import { Route as StudentPlannerRouteImport } from './routes/student.planner'
-import { Route as StudentBookmarksRouteImport } from './routes/student.bookmarks'
-import { Route as StudentAskRouteImport } from './routes/student.ask'
-import { Route as StudentAnnouncementsRouteImport } from './routes/student.announcements'
-import { Route as FacultyUploadRouteImport } from './routes/faculty.upload'
-import { Route as FacultyQuizzesRouteImport } from './routes/faculty.quizzes'
-import { Route as FacultyQueriesRouteImport } from './routes/faculty.queries'
-import { Route as FacultyEscalationsRouteImport } from './routes/faculty.escalations'
-import { Route as FacultyDocumentsRouteImport } from './routes/faculty.documents'
-import { Route as FacultyAnnouncementsRouteImport } from './routes/faculty.announcements'
-import { Route as FacultyAnalyticsRouteImport } from './routes/faculty.analytics'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminSubjectsRouteImport } from './routes/admin.subjects'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
-import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
-import { Route as AdminAuditRouteImport } from './routes/admin.audit'
-import { Route as AdminApprovalsRouteImport } from './routes/admin.approvals'
-import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
+import { Route as AdminApprovalsRouteImport } from './routes/admin.approvals'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminGraphRouteImport } from './routes/admin.graph'
+import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
+import { Route as AdminProfileRouteImport } from './routes/admin.profile'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminResearchRouteImport } from './routes/admin.research'
+import { Route as AdminSubjectsRouteImport } from './routes/admin.subjects'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as FacultyIndexRouteImport } from './routes/faculty.index'
+import { Route as FacultyAnalyticsRouteImport } from './routes/faculty.analytics'
+import { Route as FacultyAnnouncementsRouteImport } from './routes/faculty.announcements'
+import { Route as FacultyDocumentsRouteImport } from './routes/faculty.documents'
+import { Route as FacultyEscalationsRouteImport } from './routes/faculty.escalations'
+import { Route as FacultyKnowledgeGraphRouteImport } from './routes/faculty.knowledge-graph'
+import { Route as FacultyProfileRouteImport } from './routes/faculty.profile'
+import { Route as FacultyQueriesRouteImport } from './routes/faculty.queries'
+import { Route as FacultyQuizzesRouteImport } from './routes/faculty.quizzes'
+import { Route as FacultySubjectsRouteImport } from './routes/faculty.subjects'
+import { Route as FacultyUploadRouteImport } from './routes/faculty.upload'
+import { Route as StudentIndexRouteImport } from './routes/student.index'
+import { Route as StudentAnnouncementsRouteImport } from './routes/student.announcements'
+import { Route as StudentAskRouteImport } from './routes/student.ask'
+import { Route as StudentBookmarksRouteImport } from './routes/student.bookmarks'
+import { Route as StudentConceptMapRouteImport } from './routes/student.concept-map'
+import { Route as StudentDiscussionRouteImport } from './routes/student.discussion'
+import { Route as StudentPlannerRouteImport } from './routes/student.planner'
+import { Route as StudentProfileRouteImport } from './routes/student.profile'
+import { Route as StudentQuizzesRouteImport } from './routes/student.quizzes'
+import { Route as StudentSearchRouteImport } from './routes/student.search'
 
-const StudentRoute = StudentRouteImport.update({
-  id: '/student',
-  path: '/student',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FacultyRoute = FacultyRouteImport.update({
-  id: '/faculty',
-  path: '/faculty',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -53,119 +57,24 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/faculty',
+  path: '/faculty',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StudentIndexRoute = StudentIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => StudentRoute,
-} as any)
-const FacultyIndexRoute = FacultyIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => FacultyRoute,
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const StudentSearchRoute = StudentSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => StudentRoute,
-} as any)
-const StudentQuizzesRoute = StudentQuizzesRouteImport.update({
-  id: '/quizzes',
-  path: '/quizzes',
-  getParentRoute: () => StudentRoute,
-} as any)
-const StudentPlannerRoute = StudentPlannerRouteImport.update({
-  id: '/planner',
-  path: '/planner',
-  getParentRoute: () => StudentRoute,
-} as any)
-const StudentBookmarksRoute = StudentBookmarksRouteImport.update({
-  id: '/bookmarks',
-  path: '/bookmarks',
-  getParentRoute: () => StudentRoute,
-} as any)
-const StudentAskRoute = StudentAskRouteImport.update({
-  id: '/ask',
-  path: '/ask',
-  getParentRoute: () => StudentRoute,
-} as any)
-const StudentAnnouncementsRoute = StudentAnnouncementsRouteImport.update({
-  id: '/announcements',
-  path: '/announcements',
-  getParentRoute: () => StudentRoute,
-} as any)
-const FacultyUploadRoute = FacultyUploadRouteImport.update({
-  id: '/upload',
-  path: '/upload',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyQuizzesRoute = FacultyQuizzesRouteImport.update({
-  id: '/quizzes',
-  path: '/quizzes',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyQueriesRoute = FacultyQueriesRouteImport.update({
-  id: '/queries',
-  path: '/queries',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyEscalationsRoute = FacultyEscalationsRouteImport.update({
-  id: '/escalations',
-  path: '/escalations',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyDocumentsRoute = FacultyDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyAnnouncementsRoute = FacultyAnnouncementsRouteImport.update({
-  id: '/announcements',
-  path: '/announcements',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyAnalyticsRoute = FacultyAnalyticsRouteImport.update({
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSubjectsRoute = AdminSubjectsRouteImport.update({
-  id: '/subjects',
-  path: '/subjects',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminKnowledgeRoute = AdminKnowledgeRouteImport.update({
-  id: '/knowledge',
-  path: '/knowledge',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAuditRoute = AdminAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminApprovalsRoute = AdminApprovalsRouteImport.update({
-  id: '/approvals',
-  path: '/approvals',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
@@ -173,10 +82,155 @@ const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
   path: '/announcements',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+const AdminApprovalsRoute = AdminApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGraphRoute = AdminGraphRouteImport.update({
+  id: '/graph',
+  path: '/graph',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminKnowledgeRoute = AdminKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProfileRoute = AdminProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminResearchRoute = AdminResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSubjectsRoute = AdminSubjectsRouteImport.update({
+  id: '/subjects',
+  path: '/subjects',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const FacultyIndexRoute = FacultyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyAnalyticsRoute = FacultyAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyAnnouncementsRoute = FacultyAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyDocumentsRoute = FacultyDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyEscalationsRoute = FacultyEscalationsRouteImport.update({
+  id: '/escalations',
+  path: '/escalations',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyKnowledgeGraphRoute = FacultyKnowledgeGraphRouteImport.update({
+  id: '/knowledge-graph',
+  path: '/knowledge-graph',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyProfileRoute = FacultyProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyQueriesRoute = FacultyQueriesRouteImport.update({
+  id: '/queries',
+  path: '/queries',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyQuizzesRoute = FacultyQuizzesRouteImport.update({
+  id: '/quizzes',
+  path: '/quizzes',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultySubjectsRoute = FacultySubjectsRouteImport.update({
+  id: '/subjects',
+  path: '/subjects',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyUploadRoute = FacultyUploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const StudentIndexRoute = StudentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentAnnouncementsRoute = StudentAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentAskRoute = StudentAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentBookmarksRoute = StudentBookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentConceptMapRoute = StudentConceptMapRouteImport.update({
+  id: '/concept-map',
+  path: '/concept-map',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentDiscussionRoute = StudentDiscussionRouteImport.update({
+  id: '/discussion',
+  path: '/discussion',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentPlannerRoute = StudentPlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentProfileRoute = StudentProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentQuizzesRoute = StudentQuizzesRouteImport.update({
+  id: '/quizzes',
+  path: '/quizzes',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentSearchRoute = StudentSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => StudentRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -188,21 +242,30 @@ export interface FileRoutesByFullPath {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/graph': typeof AdminGraphRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/research': typeof AdminResearchRoute
   '/admin/subjects': typeof AdminSubjectsRoute
   '/admin/users': typeof AdminUsersRoute
   '/faculty/analytics': typeof FacultyAnalyticsRoute
   '/faculty/announcements': typeof FacultyAnnouncementsRoute
   '/faculty/documents': typeof FacultyDocumentsRoute
   '/faculty/escalations': typeof FacultyEscalationsRoute
+  '/faculty/knowledge-graph': typeof FacultyKnowledgeGraphRoute
+  '/faculty/profile': typeof FacultyProfileRoute
   '/faculty/queries': typeof FacultyQueriesRoute
   '/faculty/quizzes': typeof FacultyQuizzesRoute
+  '/faculty/subjects': typeof FacultySubjectsRoute
   '/faculty/upload': typeof FacultyUploadRoute
   '/student/announcements': typeof StudentAnnouncementsRoute
   '/student/ask': typeof StudentAskRoute
   '/student/bookmarks': typeof StudentBookmarksRoute
+  '/student/concept-map': typeof StudentConceptMapRoute
+  '/student/discussion': typeof StudentDiscussionRoute
   '/student/planner': typeof StudentPlannerRoute
+  '/student/profile': typeof StudentProfileRoute
   '/student/quizzes': typeof StudentQuizzesRoute
   '/student/search': typeof StudentSearchRoute
   '/admin/': typeof AdminIndexRoute
@@ -215,21 +278,30 @@ export interface FileRoutesByTo {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/graph': typeof AdminGraphRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/research': typeof AdminResearchRoute
   '/admin/subjects': typeof AdminSubjectsRoute
   '/admin/users': typeof AdminUsersRoute
   '/faculty/analytics': typeof FacultyAnalyticsRoute
   '/faculty/announcements': typeof FacultyAnnouncementsRoute
   '/faculty/documents': typeof FacultyDocumentsRoute
   '/faculty/escalations': typeof FacultyEscalationsRoute
+  '/faculty/knowledge-graph': typeof FacultyKnowledgeGraphRoute
+  '/faculty/profile': typeof FacultyProfileRoute
   '/faculty/queries': typeof FacultyQueriesRoute
   '/faculty/quizzes': typeof FacultyQuizzesRoute
+  '/faculty/subjects': typeof FacultySubjectsRoute
   '/faculty/upload': typeof FacultyUploadRoute
   '/student/announcements': typeof StudentAnnouncementsRoute
   '/student/ask': typeof StudentAskRoute
   '/student/bookmarks': typeof StudentBookmarksRoute
+  '/student/concept-map': typeof StudentConceptMapRoute
+  '/student/discussion': typeof StudentDiscussionRoute
   '/student/planner': typeof StudentPlannerRoute
+  '/student/profile': typeof StudentProfileRoute
   '/student/quizzes': typeof StudentQuizzesRoute
   '/student/search': typeof StudentSearchRoute
   '/admin': typeof AdminIndexRoute
@@ -246,21 +318,30 @@ export interface FileRoutesById {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/graph': typeof AdminGraphRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/research': typeof AdminResearchRoute
   '/admin/subjects': typeof AdminSubjectsRoute
   '/admin/users': typeof AdminUsersRoute
   '/faculty/analytics': typeof FacultyAnalyticsRoute
   '/faculty/announcements': typeof FacultyAnnouncementsRoute
   '/faculty/documents': typeof FacultyDocumentsRoute
   '/faculty/escalations': typeof FacultyEscalationsRoute
+  '/faculty/knowledge-graph': typeof FacultyKnowledgeGraphRoute
+  '/faculty/profile': typeof FacultyProfileRoute
   '/faculty/queries': typeof FacultyQueriesRoute
   '/faculty/quizzes': typeof FacultyQuizzesRoute
+  '/faculty/subjects': typeof FacultySubjectsRoute
   '/faculty/upload': typeof FacultyUploadRoute
   '/student/announcements': typeof StudentAnnouncementsRoute
   '/student/ask': typeof StudentAskRoute
   '/student/bookmarks': typeof StudentBookmarksRoute
+  '/student/concept-map': typeof StudentConceptMapRoute
+  '/student/discussion': typeof StudentDiscussionRoute
   '/student/planner': typeof StudentPlannerRoute
+  '/student/profile': typeof StudentProfileRoute
   '/student/quizzes': typeof StudentQuizzesRoute
   '/student/search': typeof StudentSearchRoute
   '/admin/': typeof AdminIndexRoute
@@ -278,21 +359,30 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/approvals'
     | '/admin/audit'
+    | '/admin/graph'
     | '/admin/knowledge'
+    | '/admin/profile'
     | '/admin/reports'
+    | '/admin/research'
     | '/admin/subjects'
     | '/admin/users'
     | '/faculty/analytics'
     | '/faculty/announcements'
     | '/faculty/documents'
     | '/faculty/escalations'
+    | '/faculty/knowledge-graph'
+    | '/faculty/profile'
     | '/faculty/queries'
     | '/faculty/quizzes'
+    | '/faculty/subjects'
     | '/faculty/upload'
     | '/student/announcements'
     | '/student/ask'
     | '/student/bookmarks'
+    | '/student/concept-map'
+    | '/student/discussion'
     | '/student/planner'
+    | '/student/profile'
     | '/student/quizzes'
     | '/student/search'
     | '/admin/'
@@ -305,21 +395,30 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/approvals'
     | '/admin/audit'
+    | '/admin/graph'
     | '/admin/knowledge'
+    | '/admin/profile'
     | '/admin/reports'
+    | '/admin/research'
     | '/admin/subjects'
     | '/admin/users'
     | '/faculty/analytics'
     | '/faculty/announcements'
     | '/faculty/documents'
     | '/faculty/escalations'
+    | '/faculty/knowledge-graph'
+    | '/faculty/profile'
     | '/faculty/queries'
     | '/faculty/quizzes'
+    | '/faculty/subjects'
     | '/faculty/upload'
     | '/student/announcements'
     | '/student/ask'
     | '/student/bookmarks'
+    | '/student/concept-map'
+    | '/student/discussion'
     | '/student/planner'
+    | '/student/profile'
     | '/student/quizzes'
     | '/student/search'
     | '/admin'
@@ -335,21 +434,30 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/approvals'
     | '/admin/audit'
+    | '/admin/graph'
     | '/admin/knowledge'
+    | '/admin/profile'
     | '/admin/reports'
+    | '/admin/research'
     | '/admin/subjects'
     | '/admin/users'
     | '/faculty/analytics'
     | '/faculty/announcements'
     | '/faculty/documents'
     | '/faculty/escalations'
+    | '/faculty/knowledge-graph'
+    | '/faculty/profile'
     | '/faculty/queries'
     | '/faculty/quizzes'
+    | '/faculty/subjects'
     | '/faculty/upload'
     | '/student/announcements'
     | '/student/ask'
     | '/student/bookmarks'
+    | '/student/concept-map'
+    | '/student/discussion'
     | '/student/planner'
+    | '/student/profile'
     | '/student/quizzes'
     | '/student/search'
     | '/admin/'
@@ -366,18 +474,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/student': {
-      id: '/student'
-      path: '/student'
-      fullPath: '/student'
-      preLoaderRoute: typeof StudentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faculty': {
-      id: '/faculty'
-      path: '/faculty'
-      fullPath: '/faculty'
-      preLoaderRoute: typeof FacultyRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -387,172 +488,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/faculty': {
+      id: '/faculty'
+      path: '/faculty'
+      fullPath: '/faculty'
+      preLoaderRoute: typeof FacultyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/student/': {
-      id: '/student/'
-      path: '/'
-      fullPath: '/student/'
-      preLoaderRoute: typeof StudentIndexRouteImport
-      parentRoute: typeof StudentRoute
-    }
-    '/faculty/': {
-      id: '/faculty/'
-      path: '/'
-      fullPath: '/faculty/'
-      preLoaderRoute: typeof FacultyIndexRouteImport
-      parentRoute: typeof FacultyRoute
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/student/search': {
-      id: '/student/search'
-      path: '/search'
-      fullPath: '/student/search'
-      preLoaderRoute: typeof StudentSearchRouteImport
-      parentRoute: typeof StudentRoute
-    }
-    '/student/quizzes': {
-      id: '/student/quizzes'
-      path: '/quizzes'
-      fullPath: '/student/quizzes'
-      preLoaderRoute: typeof StudentQuizzesRouteImport
-      parentRoute: typeof StudentRoute
-    }
-    '/student/planner': {
-      id: '/student/planner'
-      path: '/planner'
-      fullPath: '/student/planner'
-      preLoaderRoute: typeof StudentPlannerRouteImport
-      parentRoute: typeof StudentRoute
-    }
-    '/student/bookmarks': {
-      id: '/student/bookmarks'
-      path: '/bookmarks'
-      fullPath: '/student/bookmarks'
-      preLoaderRoute: typeof StudentBookmarksRouteImport
-      parentRoute: typeof StudentRoute
-    }
-    '/student/ask': {
-      id: '/student/ask'
-      path: '/ask'
-      fullPath: '/student/ask'
-      preLoaderRoute: typeof StudentAskRouteImport
-      parentRoute: typeof StudentRoute
-    }
-    '/student/announcements': {
-      id: '/student/announcements'
-      path: '/announcements'
-      fullPath: '/student/announcements'
-      preLoaderRoute: typeof StudentAnnouncementsRouteImport
-      parentRoute: typeof StudentRoute
-    }
-    '/faculty/upload': {
-      id: '/faculty/upload'
-      path: '/upload'
-      fullPath: '/faculty/upload'
-      preLoaderRoute: typeof FacultyUploadRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/faculty/quizzes': {
-      id: '/faculty/quizzes'
-      path: '/quizzes'
-      fullPath: '/faculty/quizzes'
-      preLoaderRoute: typeof FacultyQuizzesRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/faculty/queries': {
-      id: '/faculty/queries'
-      path: '/queries'
-      fullPath: '/faculty/queries'
-      preLoaderRoute: typeof FacultyQueriesRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/faculty/escalations': {
-      id: '/faculty/escalations'
-      path: '/escalations'
-      fullPath: '/faculty/escalations'
-      preLoaderRoute: typeof FacultyEscalationsRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/faculty/documents': {
-      id: '/faculty/documents'
-      path: '/documents'
-      fullPath: '/faculty/documents'
-      preLoaderRoute: typeof FacultyDocumentsRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/faculty/announcements': {
-      id: '/faculty/announcements'
-      path: '/announcements'
-      fullPath: '/faculty/announcements'
-      preLoaderRoute: typeof FacultyAnnouncementsRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/faculty/analytics': {
-      id: '/faculty/analytics'
-      path: '/analytics'
-      fullPath: '/faculty/analytics'
-      preLoaderRoute: typeof FacultyAnalyticsRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/subjects': {
-      id: '/admin/subjects'
-      path: '/subjects'
-      fullPath: '/admin/subjects'
-      preLoaderRoute: typeof AdminSubjectsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/knowledge': {
-      id: '/admin/knowledge'
-      path: '/knowledge'
-      fullPath: '/admin/knowledge'
-      preLoaderRoute: typeof AdminKnowledgeRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/audit': {
-      id: '/admin/audit'
-      path: '/audit'
-      fullPath: '/admin/audit'
-      preLoaderRoute: typeof AdminAuditRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/approvals': {
-      id: '/admin/approvals'
-      path: '/approvals'
-      fullPath: '/admin/approvals'
-      preLoaderRoute: typeof AdminApprovalsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/announcements': {
-      id: '/admin/announcements'
-      path: '/announcements'
-      fullPath: '/admin/announcements'
-      preLoaderRoute: typeof AdminAnnouncementsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/analytics': {
@@ -562,6 +516,223 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/announcements': {
+      id: '/admin/announcements'
+      path: '/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AdminAnnouncementsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/approvals': {
+      id: '/admin/approvals'
+      path: '/approvals'
+      fullPath: '/admin/approvals'
+      preLoaderRoute: typeof AdminApprovalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/graph': {
+      id: '/admin/graph'
+      path: '/graph'
+      fullPath: '/admin/graph'
+      preLoaderRoute: typeof AdminGraphRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/knowledge': {
+      id: '/admin/knowledge'
+      path: '/knowledge'
+      fullPath: '/admin/knowledge'
+      preLoaderRoute: typeof AdminKnowledgeRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/profile': {
+      id: '/admin/profile'
+      path: '/profile'
+      fullPath: '/admin/profile'
+      preLoaderRoute: typeof AdminProfileRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/research': {
+      id: '/admin/research'
+      path: '/research'
+      fullPath: '/admin/research'
+      preLoaderRoute: typeof AdminResearchRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/subjects': {
+      id: '/admin/subjects'
+      path: '/subjects'
+      fullPath: '/admin/subjects'
+      preLoaderRoute: typeof AdminSubjectsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/faculty/': {
+      id: '/faculty/'
+      path: '/'
+      fullPath: '/faculty/'
+      preLoaderRoute: typeof FacultyIndexRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/analytics': {
+      id: '/faculty/analytics'
+      path: '/analytics'
+      fullPath: '/faculty/analytics'
+      preLoaderRoute: typeof FacultyAnalyticsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/announcements': {
+      id: '/faculty/announcements'
+      path: '/announcements'
+      fullPath: '/faculty/announcements'
+      preLoaderRoute: typeof FacultyAnnouncementsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/documents': {
+      id: '/faculty/documents'
+      path: '/documents'
+      fullPath: '/faculty/documents'
+      preLoaderRoute: typeof FacultyDocumentsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/escalations': {
+      id: '/faculty/escalations'
+      path: '/escalations'
+      fullPath: '/faculty/escalations'
+      preLoaderRoute: typeof FacultyEscalationsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/knowledge-graph': {
+      id: '/faculty/knowledge-graph'
+      path: '/knowledge-graph'
+      fullPath: '/faculty/knowledge-graph'
+      preLoaderRoute: typeof FacultyKnowledgeGraphRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/profile': {
+      id: '/faculty/profile'
+      path: '/profile'
+      fullPath: '/faculty/profile'
+      preLoaderRoute: typeof FacultyProfileRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/queries': {
+      id: '/faculty/queries'
+      path: '/queries'
+      fullPath: '/faculty/queries'
+      preLoaderRoute: typeof FacultyQueriesRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/quizzes': {
+      id: '/faculty/quizzes'
+      path: '/quizzes'
+      fullPath: '/faculty/quizzes'
+      preLoaderRoute: typeof FacultyQuizzesRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/subjects': {
+      id: '/faculty/subjects'
+      path: '/subjects'
+      fullPath: '/faculty/subjects'
+      preLoaderRoute: typeof FacultySubjectsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/upload': {
+      id: '/faculty/upload'
+      path: '/upload'
+      fullPath: '/faculty/upload'
+      preLoaderRoute: typeof FacultyUploadRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/student/': {
+      id: '/student/'
+      path: '/'
+      fullPath: '/student/'
+      preLoaderRoute: typeof StudentIndexRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/announcements': {
+      id: '/student/announcements'
+      path: '/announcements'
+      fullPath: '/student/announcements'
+      preLoaderRoute: typeof StudentAnnouncementsRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/ask': {
+      id: '/student/ask'
+      path: '/ask'
+      fullPath: '/student/ask'
+      preLoaderRoute: typeof StudentAskRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/bookmarks': {
+      id: '/student/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/student/bookmarks'
+      preLoaderRoute: typeof StudentBookmarksRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/concept-map': {
+      id: '/student/concept-map'
+      path: '/concept-map'
+      fullPath: '/student/concept-map'
+      preLoaderRoute: typeof StudentConceptMapRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/discussion': {
+      id: '/student/discussion'
+      path: '/discussion'
+      fullPath: '/student/discussion'
+      preLoaderRoute: typeof StudentDiscussionRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/planner': {
+      id: '/student/planner'
+      path: '/planner'
+      fullPath: '/student/planner'
+      preLoaderRoute: typeof StudentPlannerRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/profile': {
+      id: '/student/profile'
+      path: '/profile'
+      fullPath: '/student/profile'
+      preLoaderRoute: typeof StudentProfileRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/quizzes': {
+      id: '/student/quizzes'
+      path: '/quizzes'
+      fullPath: '/student/quizzes'
+      preLoaderRoute: typeof StudentQuizzesRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/search': {
+      id: '/student/search'
+      path: '/search'
+      fullPath: '/student/search'
+      preLoaderRoute: typeof StudentSearchRouteImport
+      parentRoute: typeof StudentRoute
+    }
   }
 }
 
@@ -570,8 +741,11 @@ interface AdminRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminApprovalsRoute: typeof AdminApprovalsRoute
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminGraphRoute: typeof AdminGraphRoute
   AdminKnowledgeRoute: typeof AdminKnowledgeRoute
+  AdminProfileRoute: typeof AdminProfileRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminResearchRoute: typeof AdminResearchRoute
   AdminSubjectsRoute: typeof AdminSubjectsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -582,8 +756,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminApprovalsRoute: AdminApprovalsRoute,
   AdminAuditRoute: AdminAuditRoute,
+  AdminGraphRoute: AdminGraphRoute,
   AdminKnowledgeRoute: AdminKnowledgeRoute,
+  AdminProfileRoute: AdminProfileRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminResearchRoute: AdminResearchRoute,
   AdminSubjectsRoute: AdminSubjectsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -596,8 +773,11 @@ interface FacultyRouteChildren {
   FacultyAnnouncementsRoute: typeof FacultyAnnouncementsRoute
   FacultyDocumentsRoute: typeof FacultyDocumentsRoute
   FacultyEscalationsRoute: typeof FacultyEscalationsRoute
+  FacultyKnowledgeGraphRoute: typeof FacultyKnowledgeGraphRoute
+  FacultyProfileRoute: typeof FacultyProfileRoute
   FacultyQueriesRoute: typeof FacultyQueriesRoute
   FacultyQuizzesRoute: typeof FacultyQuizzesRoute
+  FacultySubjectsRoute: typeof FacultySubjectsRoute
   FacultyUploadRoute: typeof FacultyUploadRoute
   FacultyIndexRoute: typeof FacultyIndexRoute
 }
@@ -607,8 +787,11 @@ const FacultyRouteChildren: FacultyRouteChildren = {
   FacultyAnnouncementsRoute: FacultyAnnouncementsRoute,
   FacultyDocumentsRoute: FacultyDocumentsRoute,
   FacultyEscalationsRoute: FacultyEscalationsRoute,
+  FacultyKnowledgeGraphRoute: FacultyKnowledgeGraphRoute,
+  FacultyProfileRoute: FacultyProfileRoute,
   FacultyQueriesRoute: FacultyQueriesRoute,
   FacultyQuizzesRoute: FacultyQuizzesRoute,
+  FacultySubjectsRoute: FacultySubjectsRoute,
   FacultyUploadRoute: FacultyUploadRoute,
   FacultyIndexRoute: FacultyIndexRoute,
 }
@@ -620,7 +803,10 @@ interface StudentRouteChildren {
   StudentAnnouncementsRoute: typeof StudentAnnouncementsRoute
   StudentAskRoute: typeof StudentAskRoute
   StudentBookmarksRoute: typeof StudentBookmarksRoute
+  StudentConceptMapRoute: typeof StudentConceptMapRoute
+  StudentDiscussionRoute: typeof StudentDiscussionRoute
   StudentPlannerRoute: typeof StudentPlannerRoute
+  StudentProfileRoute: typeof StudentProfileRoute
   StudentQuizzesRoute: typeof StudentQuizzesRoute
   StudentSearchRoute: typeof StudentSearchRoute
   StudentIndexRoute: typeof StudentIndexRoute
@@ -630,7 +816,10 @@ const StudentRouteChildren: StudentRouteChildren = {
   StudentAnnouncementsRoute: StudentAnnouncementsRoute,
   StudentAskRoute: StudentAskRoute,
   StudentBookmarksRoute: StudentBookmarksRoute,
+  StudentConceptMapRoute: StudentConceptMapRoute,
+  StudentDiscussionRoute: StudentDiscussionRoute,
   StudentPlannerRoute: StudentPlannerRoute,
+  StudentProfileRoute: StudentProfileRoute,
   StudentQuizzesRoute: StudentQuizzesRoute,
   StudentSearchRoute: StudentSearchRoute,
   StudentIndexRoute: StudentIndexRoute,

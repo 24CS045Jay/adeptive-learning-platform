@@ -1,0 +1,349 @@
+import { useState, useId } from "react";
+import { KeyRound, CheckCircle2, Target, Flame, Clock, BookOpen, Brain, Star, TrendingDown } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { PageHeader, Card, Pill } from "@/components/app-shell";
+import type { Role, LearningStyle } from "@/lib/mock-data";
+import { studentLearningProfiles } from "@/lib/mock-data";
+import { cn } from "@/lib/utils";
+
+const roleMeta: Record<Role, { label: string; color: string; pillTone: "indigo" | "amber" | "green" }> = {
+  student: { label: "Student",  color: "bg-indigo-brand/10 text-indigo-brand", pillTone: "indigo" },
+  faculty: { label: "Faculty",  color: "bg-amber-brand/15 text-amber-brand",   pillTone: "amber" },
+  admin:   { label: "Admin",    color: "bg-teal-brand/10 text-teal-brand",     pillTone: "green" },
+};
+
+const STYLE_OPTIONS: { value: LearningStyle; label: string; desc: string }[] = [
+  { value: "visual",        label: "Visual",        desc: "Diagrams, charts, and visual representations" },
+  { value: "textual",       label: "Textual",       desc: "Written explanations, definitions, and proofs" },
+  { value: "example-driven", label: "Example-driven", desc: "Real-world examples before formal concepts" },
+];
+
+// ─── Main Profile Page ────────────────────────────────────────────────────────
+
+export function ProfilePage({ role }: { role: Role }) {
+  const { user, changePassword } = useAuth();
+  const id = useId();
+
+  // Change-password form state
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw]         = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwError, setPwError]     = useState<string | null>(null);
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const meta = roleMeta[role];
+  const displayUser = user ?? { name: "—", email: "—", role };
+  const initials = displayUser.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const handleChangePw = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError(null);
+    setPwSuccess(false);
+    if (newPw !== confirmPw) { setPwError("New passwords do not match."); return; }
+    if (newPw.length < 6)    { setPwError("New password must be at least 6 characters."); return; }
+    setPwLoading(true);
+    await new Promise((r) => setTimeout(r, 400));
+    const result = changePassword(currentPw, newPw);
+    setPwLoading(false);
+    if (!result.ok) { setPwError(result.error ?? "Failed to change password."); return; }
+    setPwSuccess(true);
+    setCurrentPw(""); setNewPw(""); setConfirmPw("");
+  };
+
+  return (
+    <div>
+      <PageHeader title="My Profile" subtitle="Your account details and security settings." />
+
+      {/* Avatar + info row */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card>
+          <div className="flex flex-col items-center py-4 text-center">
+            <div className={cn("flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold", meta.color)}>
+              {initials}
+            </div>
+            <div className="mt-4 font-serif text-xl font-bold text-slate-900">{displayUser.name}</div>
+            <div className="mt-1 text-sm text-slate-500">{displayUser.email}</div>
+            <div className="mt-3"><Pill tone={meta.pillTone}>{meta.label}</Pill></div>
+          </div>
+        </Card>
+
+        <div className="md:col-span-2">
+          <Card title="Account Information">
+            <dl className="divide-y divide-slate-100">
+              {[
+                { label: "Full name",    value: displayUser.name },
+                { label: "Email address", value: displayUser.email },
+                { label: "Role",         value: meta.label },
+                { label: "Institution",  value: "CSPIT · Charotar University" },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between py-3">
+                  <dt className="text-sm font-medium text-slate-500">{label}</dt>
+                  <dd className="text-sm text-slate-900">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
+        </div>
+      </div>
+
+      {/* Student Learning Profile section — only shown for student role */}
+      {role === "student" && <StudentLearningProfileSection userId="u1" />}
+
+      {/* Change password */}
+      <div className="mt-6">
+        <Card title="Change Password">
+          <div className="flex items-start gap-3 mb-5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-brand/10 text-indigo-brand">
+              <KeyRound className="h-4 w-4" />
+            </div>
+            <p className="text-sm text-slate-500 mt-1">
+              Update your account password. You'll stay logged in after changing it.
+            </p>
+          </div>
+
+          {pwSuccess && (
+            <div className="mb-5 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              Password changed successfully!
+            </div>
+          )}
+          {pwError && (
+            <div role="alert" className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <span>⚠</span> {pwError}
+            </div>
+          )}
+
+          <form onSubmit={handleChangePw} noValidate className="max-w-md space-y-4">
+            <div>
+              <label htmlFor={`${id}-cur-pw`} className="mb-1.5 block text-sm font-medium text-slate-700">Current password</label>
+              <input id={`${id}-cur-pw`} type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)}
+                placeholder="••••••••" required
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-300"
+              />
+            </div>
+            <div>
+              <label htmlFor={`${id}-new-pw`} className="mb-1.5 block text-sm font-medium text-slate-700">New password</label>
+              <input id={`${id}-new-pw`} type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)}
+                placeholder="Min. 6 characters" required
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-300"
+              />
+            </div>
+            <div>
+              <label htmlFor={`${id}-confirm-pw`} className="mb-1.5 block text-sm font-medium text-slate-700">Confirm new password</label>
+              <input id={`${id}-confirm-pw`} type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)}
+                placeholder="Re-enter new password" required
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-300"
+              />
+            </div>
+            <button type="submit" disabled={pwLoading}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-brand-hover disabled:opacity-60"
+            >
+              {pwLoading && <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
+              {pwLoading ? "Updating…" : "Update password"}
+            </button>
+          </form>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ─── Student Learning Profile Section ────────────────────────────────────────
+
+function StudentLearningProfileSection({ userId }: { userId: string }) {
+  const profile = studentLearningProfiles[userId];
+  const id = useId();
+
+  const [style, setStyle]         = useState<LearningStyle>(profile?.learningStyle ?? "example-driven");
+  const [goals, setGoals]         = useState(profile?.learningGoals ?? "");
+  const [semester, setSemester]   = useState(String(profile?.currentSemester ?? 5));
+  const [saved, setSaved]         = useState(false);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In production: PATCH /api/students/{id}/profile
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  if (!profile) return null;
+
+  const studyHours = Math.round(profile.totalStudyTimeMinutes / 60);
+
+  return (
+    <div className="mt-6 space-y-6">
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {[
+          { icon: Flame,    label: "Learning streak",  value: `${profile.currentStreakDays} days`,  color: "text-amber-brand bg-amber-brand/15" },
+          { icon: Clock,    label: "Study time",        value: `${studyHours}h`,                    color: "text-indigo-brand bg-indigo-brand/10" },
+          { icon: BookOpen, label: "Topics completed",  value: profile.topicsCompleted.length,      color: "text-green-brand bg-green-brand/10" },
+          { icon: Target,   label: "Quiz attempts",     value: profile.quizScoreHistory.length,     color: "text-teal-brand bg-teal-brand/10" },
+        ].map(({ icon: Icon, label, value, color }) => (
+          <div key={label} className="rounded-2xl bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)]">
+            <div className={cn("mb-3 flex h-9 w-9 items-center justify-center rounded-xl", color)}>
+              <Icon className="h-4 w-4" />
+            </div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900">{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Concepts row ── */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card title="Strong Concepts">
+          <div className="flex flex-wrap gap-2 mt-1">
+            {profile.strongConcepts.map((c) => (
+              <span key={c} className="flex items-center gap-1 rounded-full bg-green-brand/10 px-3 py-1 text-xs font-medium text-green-700">
+                <Star className="h-3 w-3" /> {c}
+              </span>
+            ))}
+          </div>
+        </Card>
+        <Card title="Weak Concepts — Needs Revision">
+          <div className="flex flex-wrap gap-2 mt-1">
+            {profile.weakConcepts.map((c) => (
+              <span key={c} className="flex items-center gap-1 rounded-full bg-red-brand/10 px-3 py-1 text-xs font-medium text-red-700">
+                <TrendingDown className="h-3 w-3" /> {c}
+              </span>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* ── Learning preferences form ── */}
+      <Card title="Learning Preferences">
+        <form onSubmit={handleSave} className="space-y-5 max-w-lg">
+          {saved && (
+            <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              <CheckCircle2 className="h-4 w-4 shrink-0" /> Preferences saved!
+            </div>
+          )}
+
+          {/* Learning style */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              <Brain className="mr-1.5 inline h-4 w-4 text-indigo-brand" />
+              Preferred learning style
+            </label>
+            <p className="mb-3 text-xs text-slate-500">
+              The AI Tutor will adapt its explanations to match your preferred style.
+            </p>
+            <div className="space-y-2">
+              {STYLE_OPTIONS.map(({ value, label, desc }) => (
+                <label key={value} className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition",
+                  style === value
+                    ? "border-indigo-brand bg-indigo-brand/5"
+                    : "border-slate-200 hover:border-slate-300"
+                )}>
+                  <input
+                    type="radio"
+                    name={`${id}-style`}
+                    value={value}
+                    checked={style === value}
+                    onChange={() => setStyle(value)}
+                    className="mt-0.5 accent-indigo-brand"
+                  />
+                  <div>
+                    <div className="text-sm font-semibold text-slate-800">{label}</div>
+                    <div className="text-xs text-slate-500">{desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Learning goals */}
+          <div>
+            <label htmlFor={`${id}-goals`} className="mb-1.5 block text-sm font-medium text-slate-700">
+              <Target className="mr-1.5 inline h-4 w-4 text-indigo-brand" />
+              Learning goals
+            </label>
+            <textarea
+              id={`${id}-goals`}
+              value={goals}
+              onChange={(e) => setGoals(e.target.value)}
+              rows={3}
+              placeholder="e.g. Master Big Data concepts for a data engineering internship."
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-brand"
+            />
+          </div>
+
+          {/* Current semester */}
+          <div>
+            <label htmlFor={`${id}-semester`} className="mb-1.5 block text-sm font-medium text-slate-700">
+              Current semester
+            </label>
+            <select
+              id={`${id}-semester`}
+              value={semester}
+              onChange={(e) => setSemester(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-brand"
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <option key={n} value={n}>Semester {n}</option>
+              ))}
+            </select>
+          </div>
+
+          <button type="submit"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-brand-hover"
+          >
+            Save preferences
+          </button>
+        </form>
+      </Card>
+
+      {/* ── Quiz score history ── */}
+      <Card title="Quiz Score History">
+        {profile.quizScoreHistory.length === 0 ? (
+          <p className="text-sm text-slate-400 italic">No quiz attempts yet.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <th className="pb-3">Subject</th>
+                <th className="pb-3">Score</th>
+                <th className="pb-3">Percentage</th>
+                <th className="pb-3">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profile.quizScoreHistory.map((q, i) => {
+                const pct = Math.round((q.score / q.total) * 100);
+                return (
+                  <tr key={i} className="border-t border-slate-100">
+                    <td className="py-2.5 font-medium text-slate-800">{q.subject}</td>
+                    <td className="py-2.5 text-slate-600">{q.score}/{q.total}</td>
+                    <td className="py-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={cn("h-full rounded-full transition-all", pct >= 80 ? "bg-green-brand" : pct >= 60 ? "bg-amber-brand" : "bg-red-brand")}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className={cn("text-xs font-semibold", pct >= 80 ? "text-green-700" : pct >= 60 ? "text-amber-700" : "text-red-700")}>
+                          {pct}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 text-xs text-slate-400">{q.date}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </div>
+  );
+}
