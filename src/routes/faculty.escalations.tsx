@@ -47,22 +47,22 @@ function Escalations() {
       />
 
       {successBanner && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-6 py-4 text-sm text-green-700 font-medium">
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-success/5 px-6 py-4 text-sm text-success font-medium">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           Escalation resolved! Answer officially verified and re-indexed into the AI Tutor vector store.
         </div>
       )}
 
       {/* Filter Tabs */}
-      <div className="mb-6 flex border-b border-slate-200 bg-white px-6 rounded-2xl shadow-xs">
+      <div className="mb-6 flex border-b border-border bg-card px-6 rounded-2xl shadow-xs">
         <button
           type="button"
           onClick={() => setActiveTab("open")}
           className={cn(
             "border-b-2 px-5 py-4 text-sm font-medium transition",
             activeTab === "open"
-              ? "border-amber-500 text-amber-700 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "border-amber-500 text-gold font-bold"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           Open Escalations ({openList.length})
@@ -73,8 +73,8 @@ function Escalations() {
           className={cn(
             "border-b-2 px-5 py-4 text-sm font-medium transition",
             activeTab === "resolved"
-              ? "border-green-600 text-green-700 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "border-green-600 text-success font-bold"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           Resolved & Vector Index Synced ({resolvedList.length})
@@ -86,10 +86,10 @@ function Escalations() {
           <Card>
             <div className="flex flex-col items-center py-12 text-center">
               <CheckCircle2 className="h-10 w-10 text-green-600 mb-2" />
-              <div className="font-semibold text-slate-800">
+              <div className="font-semibold text-foreground">
                 {activeTab === "open" ? "No open escalations!" : "No resolved tickets."}
               </div>
-              <p className="mt-1 text-sm text-slate-500 max-w-sm">
+              <p className="mt-1 text-sm text-muted-foreground max-w-sm">
                 {activeTab === "open" ? "All low-confidence student queries have been answered and indexed." : "Resolved tickets will appear here."}
               </p>
             </div>
@@ -101,20 +101,20 @@ function Escalations() {
                 <div className="space-y-2 min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <Pill tone="indigo">{e.subject}</Pill>
-                    <span className="text-xs text-slate-400">Escalated by <strong className="text-slate-700">{e.student}</strong> · {e.escalatedAt}</span>
+                    <span className="text-xs text-muted-foreground">Escalated by <strong className="text-foreground">{e.student}</strong> · {e.escalatedAt}</span>
                   </div>
 
-                  <div className="font-serif text-lg font-bold text-slate-900 leading-snug">
+                  <div className="font-serif text-lg font-bold text-foreground leading-snug">
                     "{e.question}"
                   </div>
 
                   {e.status === "resolved" && e.facultyAnswer && (
-                    <div className="rounded-xl border border-green-200 bg-green-50/60 p-4 text-xs space-y-1.5 mt-3">
+                    <div className="rounded-xl border border-green-200 bg-success/5/60 p-4 text-xs space-y-1.5 mt-3">
                       <div className="font-bold text-green-800 flex items-center gap-1.5">
                         <Sparkles className="h-4 w-4 text-green-600" /> Verified Faculty Answer (Re-indexed in Vector Store):
                       </div>
-                      <p className="text-slate-700 leading-relaxed font-sans">{e.facultyAnswer}</p>
-                      <div className="text-[11px] text-slate-400">Resolved by {e.resolvedBy ?? myName}</div>
+                      <p className="text-foreground leading-relaxed font-sans">{e.facultyAnswer}</p>
+                      <div className="text-[11px] text-muted-foreground">Resolved by {e.resolvedBy ?? myName}</div>
                     </div>
                   )}
                 </div>
@@ -136,23 +136,23 @@ function Escalations() {
 
               {/* Faculty Resolution Modal / Drawer */}
               {resolvingId === e.id && (
-                <form onSubmit={handleConfirmResolve} className="mt-4 pt-4 border-t border-slate-100 space-y-3">
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                    <Sparkles className="h-4 w-4 text-indigo-brand" /> Provide Official Faculty Answer
+                <form onSubmit={handleConfirmResolve} className="mt-4 pt-4 border-t border-border space-y-3">
+                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="h-4 w-4 text-violet" /> Provide Official Faculty Answer
                   </div>
                   <textarea
                     value={facultyResponse}
                     onChange={(e) => setFacultyResponse(e.target.value)}
                     placeholder="Write detailed explanation... Clicking resolve will automatically index this answer into the AI Tutor vector store for future students."
                     rows={4}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none focus:border-indigo-brand font-sans"
+                    className="w-full rounded-xl border border-border bg-card p-3 text-xs outline-none focus:border-violet font-sans"
                     required
                   />
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setResolvingId(null)}
-                      className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                      className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent/40"
                     >
                       Cancel
                     </button>

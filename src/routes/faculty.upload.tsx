@@ -31,8 +31,8 @@ const FILE_ICONS: Record<FileType, React.ElementType> = {
 
 const FILE_COLORS: Record<FileType, string> = {
   pdf:  "text-red-brand bg-red-brand/10",
-  pptx: "text-amber-700 bg-amber-brand/15",
-  docx: "text-indigo-brand bg-indigo-brand/10",
+  pptx: "text-gold bg-amber-brand/15",
+  docx: "text-violet bg-indigo-brand/10",
 };
 
 const FILE_LABELS: Record<FileType, string> = {
@@ -137,7 +137,7 @@ function UploadContent() {
 
             {/* Success banner */}
             {submitted && (
-              <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-success/5 px-4 py-3 text-sm text-success">
                 <CheckCircle2 className="h-5 w-5 shrink-0" />
                 Document submitted for admin review. It will appear in "My Documents" until approved.
               </div>
@@ -145,7 +145,7 @@ function UploadContent() {
 
             {/* ── Drop zone ── */}
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Document <span className="text-red-500">*</span>
               </label>
               <div
@@ -156,10 +156,10 @@ function UploadContent() {
                 className={cn(
                   "cursor-pointer rounded-xl border-2 border-dashed px-6 py-10 text-center transition",
                   dragging
-                    ? "border-indigo-brand bg-indigo-brand/5"
+                    ? "border-violet bg-indigo-brand/5"
                     : selected
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-200 bg-slate-50 hover:border-indigo-brand/50 hover:bg-indigo-brand/5"
+                    ? "border-green-300 bg-success/5"
+                    : "border-border bg-accent/40 hover:border-violet/50 hover:bg-indigo-brand/5"
                 )}
               >
                 <input
@@ -176,8 +176,8 @@ function UploadContent() {
                       {FileIcon && <FileIcon className="h-7 w-7" />}
                     </div>
                     <div>
-                      <div className="font-medium text-slate-800">{selected.file.name}</div>
-                      <div className="mt-0.5 text-xs text-slate-500">
+                      <div className="font-medium text-foreground">{selected.file.name}</div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
                         {FILE_LABELS[selected.fileType]} · {(selected.file.size / 1024).toFixed(0)} KB
                       </div>
                     </div>
@@ -191,9 +191,9 @@ function UploadContent() {
                   </div>
                 ) : (
                   <div>
-                    <Upload className="mx-auto h-8 w-8 text-slate-400" />
-                    <div className="mt-3 text-sm font-medium text-slate-700">
-                      Drop a file here, or <span className="text-indigo-brand">browse</span>
+                    <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                    <div className="mt-3 text-sm font-medium text-foreground">
+                      Drop a file here, or <span className="text-violet">browse</span>
                     </div>
                     <div className="mt-1 flex items-center justify-center gap-2">
                       {(["pdf", "pptx", "docx"] as FileType[]).map((t) => {
@@ -205,7 +205,7 @@ function UploadContent() {
                         );
                       })}
                     </div>
-                    <div className="mt-2 text-xs text-slate-400">Max 50 MB</div>
+                    <div className="mt-2 text-xs text-muted-foreground">Max 50 MB</div>
                   </div>
                 )}
               </div>
@@ -219,7 +219,7 @@ function UploadContent() {
 
             {/* ── Subject ── */}
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Subject</label>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subject</label>
               <select
                 value={subjectId}
                 onChange={(e) => {
@@ -228,7 +228,7 @@ function UploadContent() {
                   const subj = subjects.find((s) => s.id === e.target.value);
                   if (subj) setSemester(String(subj.semester));
                 }}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-brand"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-violet"
               >
                 {subjects.map((s) => (
                   <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
@@ -238,13 +238,13 @@ function UploadContent() {
 
             {/* ── Module ── */}
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Module / Unit <span className="text-slate-400 font-normal">(optional)</span>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Module / Unit <span className="text-muted-foreground font-normal">(optional)</span>
               </label>
               <select
                 value={moduleId}
                 onChange={(e) => setModuleId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-brand"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-violet"
               >
                 <option value="">— Not linked to a module —</option>
                 {availableModules.map((m) => (
@@ -255,21 +255,21 @@ function UploadContent() {
 
             {/* ── Topic tag ── */}
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Topic tag <span className="text-slate-400 font-normal">(optional)</span>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Topic tag <span className="text-muted-foreground font-normal">(optional)</span>
               </label>
               <input
                 value={topicTag}
                 onChange={(e) => setTopicTag(e.target.value)}
                 placeholder="e.g. MapReduce, Logistic Regression"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-brand"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-violet"
               />
             </div>
 
             {/* ── Difficulty + Semester row ── */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Difficulty
                 </label>
                 <div className="flex gap-2">
@@ -282,11 +282,11 @@ function UploadContent() {
                         "flex-1 rounded-lg border py-2 text-xs font-semibold capitalize transition",
                         difficulty === d
                           ? d === "easy"
-                            ? "border-green-300 bg-green-50 text-green-700"
+                            ? "border-green-300 bg-success/5 text-success"
                             : d === "medium"
-                            ? "border-amber-300 bg-amber-50 text-amber-700"
-                            : "border-red-300 bg-red-50 text-red-700"
-                          : "border-slate-200 text-slate-500 hover:border-slate-300"
+                            ? "border-amber-300 bg-gold/5 text-gold"
+                            : "border-red-300 bg-danger/5 text-danger"
+                          : "border-border text-muted-foreground hover:border-slate-300"
                       )}
                     >
                       {d}
@@ -295,7 +295,7 @@ function UploadContent() {
                 </div>
               </div>
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Semester
                 </label>
                 <input
@@ -303,7 +303,7 @@ function UploadContent() {
                   min={1} max={8}
                   value={semester}
                   onChange={(e) => setSemester(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-brand"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-violet"
                 />
               </div>
             </div>
@@ -317,7 +317,7 @@ function UploadContent() {
         {/* ── Info sidebar ── */}
         <div className="hidden lg:col-span-2 lg:block space-y-4">
           <Card title="Processing pipeline">
-            <ul className="space-y-3 text-sm text-slate-600">
+            <ul className="space-y-3 text-sm text-muted-foreground">
               {[
                 { step: "1", text: "File type detected (PDF / PPTX / DOCX)" },
                 { step: "2", text: "Text extraction — slides/notes for PPTX, paragraphs for DOCX" },
@@ -327,7 +327,7 @@ function UploadContent() {
                 { step: "6", text: "Metadata tagged: subject, module, topic, difficulty, semester" },
               ].map(({ step, text }) => (
                 <li key={step} className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-brand/10 text-[11px] font-bold text-indigo-brand">{step}</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-brand/10 text-[11px] font-bold text-violet">{step}</span>
                   <span>{text}</span>
                 </li>
               ))}
@@ -344,8 +344,8 @@ function UploadContent() {
                       <Icon className="h-4 w-4" />
                     </span>
                     <div className="text-sm">
-                      <div className="font-semibold text-slate-800">.{t.toUpperCase()}</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="font-semibold text-foreground">.{t.toUpperCase()}</div>
+                      <div className="text-xs text-muted-foreground">
                         {t === "pdf" ? "Direct text extraction" : t === "pptx" ? "Slide text + speaker notes" : "Paragraphs + headings"}
                       </div>
                     </div>

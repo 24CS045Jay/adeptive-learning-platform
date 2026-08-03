@@ -83,7 +83,7 @@ function QuizManager() {
       />
 
       {generatedBanner && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-6 py-4 text-sm text-green-700 font-medium">
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-success/5 px-6 py-4 text-sm text-success font-medium">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           Quiz auto-generated and published to students! Available now on student portal.
         </div>
@@ -97,12 +97,12 @@ function QuizManager() {
             <Card key={q.id}>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-brand/15 text-amber-700">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-brand/15 text-gold">
                     <ListChecks className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-serif text-lg font-bold text-slate-900 truncate">{q.title}</div>
-                    <div className="mt-0.5 text-xs text-slate-500">
+                    <div className="font-serif text-lg font-bold text-foreground truncate">{q.title}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
                       {q.subjectName} · {q.totalQuestions} Questions · Created by {q.createdBy}
                     </div>
                   </div>
@@ -113,7 +113,7 @@ function QuizManager() {
                   <button
                     type="button"
                     onClick={() => setExpandedQuizId(isExpanded ? null : q.id)}
-                    className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-accent/40"
                   >
                     {isExpanded ? "Hide Questions" : "Inspect Questions"}
                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -131,13 +131,13 @@ function QuizManager() {
 
               {/* Expanded Questions List */}
               {isExpanded && (
-                <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <div className="mt-4 pt-4 border-t border-border space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Extracted Vector Questions ({q.questions.length})
                   </div>
                   {q.questions.map((qn, idx) => (
-                    <div key={qn.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3.5 text-xs space-y-2">
-                      <div className="flex items-center justify-between font-bold text-slate-800">
+                    <div key={qn.id} className="rounded-xl border border-border bg-accent/40 p-3.5 text-xs space-y-2">
+                      <div className="flex items-center justify-between font-bold text-foreground">
                         <span>Q{idx + 1}. {qn.prompt}</span>
                         <span className="rounded bg-indigo-100 px-2 py-0.5 text-[10px] text-indigo-700 uppercase">
                           {qn.type} · {qn.difficulty}
@@ -148,10 +148,10 @@ function QuizManager() {
                           {qn.codeSnippet}
                         </pre>
                       )}
-                      <div className="text-slate-600">
-                        <span className="font-semibold text-green-700">Answer / Explanation:</span> {qn.explanation}
+                      <div className="text-muted-foreground">
+                        <span className="font-semibold text-success">Answer / Explanation:</span> {qn.explanation}
                       </div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-[11px] text-muted-foreground">
                         Cited Source: {qn.sourceDoc} (Page {qn.sourcePage})
                       </div>
                     </div>
@@ -166,15 +166,15 @@ function QuizManager() {
       {/* ── Auto Generate Quiz Modal ── */}
       {showGenModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2 font-serif text-lg font-bold text-slate-900">
-                <Sparkles className="h-5 w-5 text-indigo-brand" /> Auto-Generate Quiz from Document
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2 font-serif text-lg font-bold text-foreground">
+                <Sparkles className="h-5 w-5 text-violet" /> Auto-Generate Quiz from Document
               </div>
               <button
                 type="button"
                 onClick={() => setShowGenModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-foreground hover:text-muted-foreground"
               >
                 ✕
               </button>
@@ -182,13 +182,13 @@ function QuizManager() {
 
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Select Source Document (Vector Store)
                 </label>
                 <select
                   value={selectedDocId}
                   onChange={(e) => setSelectedDocId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-indigo-brand font-medium"
+                  className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-violet font-medium"
                 >
                   {approvedDocs.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -198,7 +198,7 @@ function QuizManager() {
                 </select>
               </div>
 
-              <div className="rounded-xl border border-indigo-brand/20 bg-indigo-brand/5 p-3.5 text-xs text-indigo-brand leading-relaxed">
+              <div className="rounded-xl border border-violet/20 bg-indigo-brand/5 p-3.5 text-xs text-violet leading-relaxed">
                 The RAG pipeline will parse extracted text passages, formula matrices, and visual diagrams from this document to synthesize 5 adaptive questions (MCQ + Code + Conceptual Short Answer).
               </div>
             </div>
@@ -207,7 +207,7 @@ function QuizManager() {
               <button
                 type="button"
                 onClick={() => setShowGenModal(false)}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent/40"
               >
                 Cancel
               </button>
@@ -215,7 +215,7 @@ function QuizManager() {
                 type="button"
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="flex items-center gap-2 rounded-xl bg-indigo-brand px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-brand-hover shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl bg-violet px-5 py-2 text-sm font-semibold text-white hover:bg-violet-hover shadow-sm disabled:opacity-50"
               >
                 {isGenerating ? <Sparkles className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 {isGenerating ? "Generating Quiz…" : "Generate & Publish"}

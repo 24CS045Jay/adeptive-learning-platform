@@ -21,14 +21,14 @@ const FILE_ICONS: Record<FileType, React.ElementType> = {
 
 const FILE_COLORS: Record<FileType, string> = {
   pdf:  "text-red-brand bg-red-brand/10",
-  pptx: "text-amber-700 bg-amber-brand/15",
-  docx: "text-indigo-brand bg-indigo-brand/10",
+  pptx: "text-gold bg-amber-brand/15",
+  docx: "text-violet bg-indigo-brand/10",
 };
 
 const DIFFICULTY_PILL: Record<Difficulty, string> = {
-  easy:   "bg-green-brand/10 text-green-700",
-  medium: "bg-amber-brand/15 text-amber-700",
-  hard:   "bg-red-brand/10 text-red-700",
+  easy:   "bg-green-brand/10 text-success",
+  medium: "bg-amber-brand/15 text-gold",
+  hard:   "bg-red-brand/10 text-danger",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -78,8 +78,8 @@ function KnowledgeBase() {
             className={cn(
               "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition",
               showFilters || hasActiveFilters
-                ? "border-indigo-brand bg-indigo-brand/5 text-indigo-brand"
-                : "border-slate-200 bg-white text-slate-600 hover:border-indigo-brand/40"
+                ? "border-violet bg-indigo-brand/5 text-violet"
+                : "border-border bg-card text-muted-foreground hover:border-violet/40"
             )}
           >
             <SlidersHorizontal className="h-4 w-4" />
@@ -91,13 +91,13 @@ function KnowledgeBase() {
       {/* Summary metric cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { label: "Total Documents",  value: documents.length, color: "text-slate-900" },
+          { label: "Total Documents",  value: documents.length, color: "text-foreground" },
           { label: "Indexed & Live",   value: indexed.length,    color: "text-green-brand" },
           { label: "Pending Review",   value: documents.filter(d => d.status === "pending").length, color: "text-amber-brand" },
-          { label: "Total Vector Chunks", value: totalChunks.toLocaleString(), color: "text-indigo-brand" },
+          { label: "Total Vector Chunks", value: totalChunks.toLocaleString(), color: "text-violet" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)]">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</div>
+          <div key={label} className="rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)]">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
             <div className={cn("mt-2 text-3xl font-bold", color)}>{value}</div>
           </div>
         ))}
@@ -105,22 +105,22 @@ function KnowledgeBase() {
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Filter Documents</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filter Documents</span>
             {hasActiveFilters && (
-              <button type="button" onClick={clearFilters} className="text-xs font-medium text-indigo-brand hover:underline">
+              <button type="button" onClick={clearFilters} className="text-xs font-medium text-violet hover:underline">
                 Clear all filters
               </button>
             )}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-400">Subject</label>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Subject</label>
               <select
                 value={subjectFilter}
                 onChange={(e) => setSubjectFilter(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-brand"
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-violet"
               >
                 <option value="all">All Subjects</option>
                 {subjects.map((s) => (
@@ -129,11 +129,11 @@ function KnowledgeBase() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-400">Status</label>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-brand"
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-violet"
               >
                 <option value="all">All Statuses</option>
                 <option value="approved">Approved & Indexed</option>
@@ -142,11 +142,11 @@ function KnowledgeBase() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-400">Difficulty</label>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Difficulty</label>
               <select
                 value={difficultyFilter}
                 onChange={(e) => setDifficultyFilter(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-brand"
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-violet"
               >
                 <option value="all">All Difficulties</option>
                 <option value="easy">Easy</option>
@@ -155,11 +155,11 @@ function KnowledgeBase() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-400">Format</label>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Format</label>
               <select
                 value={fileTypeFilter}
                 onChange={(e) => setFileTypeFilter(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-brand"
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-violet"
               >
                 <option value="all">All Formats</option>
                 <option value="pdf">PDF</option>
@@ -176,7 +176,7 @@ function KnowledgeBase() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="pb-3 pr-4">Document</th>
                 <th className="pb-3 pr-4">Subject</th>
                 <th className="pb-3 pr-4">Module</th>
@@ -196,25 +196,25 @@ function KnowledgeBase() {
                 const mod  = learningModules.find((m) => m.id === d.moduleId);
                 const Icon = FILE_ICONS[d.fileType];
                 return (
-                  <tr key={d.id} className="border-t border-slate-100 hover:bg-slate-50">
+                  <tr key={d.id} className="border-t border-border hover:bg-accent/40">
                     <td className="py-3 pr-4">
                       <div className="flex items-center gap-2.5">
                         <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", FILE_COLORS[d.fileType])}>
                           <Icon className="h-4 w-4" />
                         </span>
                         <div>
-                          <div className="font-medium text-slate-900 leading-tight max-w-[180px] truncate">{d.name}</div>
-                          <div className="text-[11px] text-slate-400 uppercase">{d.fileType}</div>
+                          <div className="font-medium text-foreground leading-tight max-w-[180px] truncate">{d.name}</div>
+                          <div className="text-[11px] text-muted-foreground uppercase">{d.fileType}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 pr-4 whitespace-nowrap text-slate-600">{subj?.name ?? "—"}</td>
+                    <td className="py-3 pr-4 whitespace-nowrap text-muted-foreground">{subj?.name ?? "—"}</td>
                     <td className="py-3 pr-4 max-w-[140px]">
-                      <span className="block truncate text-xs text-slate-500">{mod?.name ?? <span className="italic text-slate-400">—</span>}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{mod?.name ?? <span className="italic text-muted-foreground">—</span>}</span>
                     </td>
                     <td className="py-3 pr-4">
                       {d.topicTag ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{d.topicTag}</span>
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{d.topicTag}</span>
                       ) : "—"}
                     </td>
                     <td className="py-3 pr-4">
@@ -222,19 +222,19 @@ function KnowledgeBase() {
                         {d.difficulty}
                       </span>
                     </td>
-                    <td className="py-3 pr-4 text-slate-600">{d.semester}</td>
-                    <td className="py-3 pr-4 text-slate-500 whitespace-nowrap text-xs">{d.uploadedByName ?? d.uploadedBy}</td>
-                    <td className="py-3 pr-4 text-xs text-slate-400 whitespace-nowrap">{d.uploadDate}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{d.semester}</td>
+                    <td className="py-3 pr-4 text-muted-foreground whitespace-nowrap text-xs">{d.uploadedByName ?? d.uploadedBy}</td>
+                    <td className="py-3 pr-4 text-xs text-muted-foreground whitespace-nowrap">{d.uploadDate}</td>
                     <td className="py-3 pr-4"><Pill tone={statusTone(d.status)}>{d.status}</Pill></td>
-                    <td className="py-3 pr-4 text-slate-600">{d.chunks || "—"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{d.chunks || "—"}</td>
                     <td className="py-3">
-                      <div className="flex gap-2 text-slate-400">
+                      <div className="flex gap-2 text-muted-foreground">
                         <button
-                          className="hover:text-indigo-brand transition"
+                          className="hover:text-violet transition"
                           title="Inspect & Rerank Chunks"
                           onClick={() => setRerankDoc({ id: d.id, name: d.name })}
                         >
-                          <Sliders className="h-4 w-4 text-indigo-brand" />
+                          <Sliders className="h-4 w-4 text-violet" />
                         </button>
                         <button className="hover:text-red-brand" title="Delete" onClick={() => deleteDocument(d.id)}>
                           <Trash2 className="h-4 w-4" />
@@ -246,7 +246,7 @@ function KnowledgeBase() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center text-sm text-slate-400">
+                  <td colSpan={11} className="py-12 text-center text-sm text-muted-foreground">
                     No documents match the current filters.
                   </td>
                 </tr>

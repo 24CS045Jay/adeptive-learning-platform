@@ -1,22 +1,38 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type { Role } from "./mock-data";
-import { MOCK_USERS, requestPasswordReset, changePassword as storeCPw, registerUser as storeRegister } from "./auth-store";
+import {
+  MOCK_USERS,
+  requestPasswordReset,
+  changePassword as storeCPw,
+  registerUser as storeRegister,
+  verifyPassword,
+  loginOrCreateGoogleUser,
+} from "./auth-store";
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
   role: Role;
-  token?: string; // JWT token simulation
+  token?: string;
+  mustChangePassword?: boolean;
+}
+
+interface LoginResult {
+  ok: boolean;
+  error?: string;
+  mustChangePassword?: boolean;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
-  login: (role: Role, email: string, password: string) => { ok: boolean; error?: string };
+  login: (role: Role, email: string, password: string) => LoginResult;
+  loginWithGoogle: (role: Role, email?: string, name?: string) => LoginResult;
   logout: () => void;
   sendPasswordReset: (email: string) => { ok: boolean; error?: string };
   changePassword: (currentPw: string, newPw: string) => { ok: boolean; error?: string };
-  register: (name: string, email: string, password: string, role: Role, inviteCode?: string) => { ok: boolean; error?: string };
+  clearMustChangePw: () => void;
+  register: (name: string, email: string, password: string, role: Role) => { ok: boolean; error?: string };
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -28,59 +44,47 @@ export function _setGlobalOnRegister(fn: (name: string, email: string, role: Rol
 
 // ─── Phase 9 Security Utilities ──────────────────────────────────────────────
 
-/**
- * File Upload Security Validation (Allow-list, Max Size, Virus Scan Hook)
- */
 export function validateFileUpload(fileName: string, fileSizeMb: number): { valid: boolean; error?: string } {
   const allowedExtensions = ["pdf", "pptx", "docx"];
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-
   if (!allowedExtensions.includes(ext)) {
     return { valid: false, error: `Invalid file format '.${ext}'. Only PDF, PPTX, and DOCX files are allowed.` };
   }
-
   if (fileSizeMb > 25) {
     return { valid: false, error: `File size (${fileSizeMb.toFixed(1)}MB) exceeds maximum limit of 25MB.` };
   }
-
-  // Virus & Malware Scan Hook Placeholder (Clean)
   return { valid: true };
 }
 
-/**
- * API Rate Limiter Simulation (30 requests/minute token bucket)
- */
 const rateLimitMap: Record<string, { count: number; resetTime: number }> = {};
 
 export function checkApiRateLimit(endpoint: string, maxReqsPerMin = 30): { allowed: boolean; retryAfterSec?: number } {
   const now = Date.now();
   const entry = rateLimitMap[endpoint] ?? { count: 0, resetTime: now + 60000 };
-
   if (now > entry.resetTime) {
     entry.count = 1;
     entry.resetTime = now + 60000;
   } else {
     entry.count += 1;
   }
-
   rateLimitMap[endpoint] = entry;
-
   if (entry.count > maxReqsPerMin) {
     const retryAfterSec = Math.ceil((entry.resetTime - now) / 1000);
     return { allowed: false, retryAfterSec };
   }
-
   return { allowed: true };
 }
 
-/**
- * Role Access Guard Enforcement (403 Forbidden check)
- */
 export function checkRoleAccess(user: AuthUser | null, requiredRole: Role): { allowed: boolean; status: number; error?: string } {
   if (!user) return { allowed: false, status: 401, error: "Unauthorized — Please sign in." };
-  if (user.role !== requiredRole) return { allowed: false, status: 403, error: `Forbidden 403 — ${requiredRole.toUpperCase()} permission required.` };
+  if (user.role !== requiredRole) {
+    const roleLabel = requiredRole.charAt(0).toUpperCase() + requiredRole.slice(1);
+    return { allowed: false, status: 403, error: `Forbidden 403 — ${roleLabel.toUpperCase()} permission required.` };
+  }
   return { allowed: true, status: 200 };
 }
+
+// ─── Persistence ──────────────────────────────────────────────────────────────
 
 function loadSavedUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
@@ -91,24 +95,30 @@ function loadSavedUser(): AuthUser | null {
   return null;
 }
 
+function persistUser(u: AuthUser | null) {
+  if (typeof window === "undefined") return;
+  if (u) {
+    localStorage.setItem("ai_tutor_active_user", JSON.stringify(u));
+  } else {
+    localStorage.removeItem("ai_tutor_active_user");
+  }
+}
+
+// ─── Provider ────────────────────────────────────────────────────────────────
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadSavedUser);
 
   const saveActiveUser = (u: AuthUser | null) => {
     setUser(u);
-    if (typeof window === "undefined") return;
-    if (u) {
-      localStorage.setItem("ai_tutor_active_user", JSON.stringify(u));
-    } else {
-      localStorage.removeItem("ai_tutor_active_user");
-    }
+    persistUser(u);
   };
 
-  const login = useCallback((role: Role, email: string, password: string): { ok: boolean; error?: string } => {
+  const login = useCallback((role: Role, email: string, password: string): LoginResult => {
     const cleanEmail = email.trim().toLowerCase();
     const account = MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
     if (!account) return { ok: false, error: "No account found with this email." };
-    if (account.password !== password) return { ok: false, error: "Incorrect password." };
+    if (!verifyPassword(password, account.passwordHash)) return { ok: false, error: "Incorrect password." };
     if (account.role !== role) {
       const roleLabel = account.role.charAt(0).toUpperCase() + account.role.slice(1);
       return {
@@ -122,14 +132,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: account.email,
       role: account.role,
       token: `jwt_simulated_${Date.now()}_${account.id}`,
+      mustChangePassword: account.mustChangePassword ?? false,
     };
     saveActiveUser(authUser);
-    return { ok: true };
+    return { ok: true, mustChangePassword: account.mustChangePassword ?? false };
   }, []);
 
-  const logout = useCallback(() => {
-    saveActiveUser(null);
+  const loginWithGoogle = useCallback((role: Role, customEmail?: string, customName?: string): LoginResult => {
+    const defaultEmail = role === "student" ? "student@charusat.edu.in" : role === "faculty" ? "faculty@charusat.edu.in" : "admin@charusat.edu.in";
+    const email = customEmail || defaultEmail;
+    const name = customName || (email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1) + " (Google)");
+    
+    const { user: account } = loginOrCreateGoogleUser(name, email, role);
+    const authUser: AuthUser = {
+      id: account.id,
+      name: account.name,
+      email: account.email,
+      role: account.role,
+      token: `google_oauth_token_${Date.now()}_${account.id}`,
+      mustChangePassword: false, // Google account does not need default password change
+    };
+    saveActiveUser(authUser);
+    if (_onRegisterCallback) {
+      _onRegisterCallback(account.name, account.email, account.role);
+    }
+    return { ok: true, mustChangePassword: false };
   }, []);
+
+  const logout = useCallback(() => { saveActiveUser(null); }, []);
 
   const sendPasswordReset = useCallback((email: string): { ok: boolean; error?: string } => {
     const ok = requestPasswordReset(email);
@@ -144,9 +174,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
+  /** Clears the mustChangePassword flag in the active session after a successful forced change */
+  const clearMustChangePw = useCallback(() => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, mustChangePassword: false };
+      persistUser(updated);
+      return updated;
+    });
+  }, []);
+
   const register = useCallback(
-    (name: string, email: string, password: string, role: Role, inviteCode?: string) => {
-      const result = storeRegister(name, email, password, role, inviteCode);
+    (name: string, email: string, password: string, role: Role) => {
+      const result = storeRegister(name, email, password, role);
       if (result.ok) {
         if (_onRegisterCallback) {
           _onRegisterCallback(name || email.split("@")[0], email.trim().toLowerCase(), role);
@@ -154,7 +194,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const cleanEmail = email.trim().toLowerCase();
         const account = MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
         if (account) {
-          saveActiveUser({ id: account.id, name: account.name, email: account.email, role: account.role, token: `jwt_simulated_${Date.now()}` });
+          saveActiveUser({
+            id: account.id,
+            name: account.name,
+            email: account.email,
+            role: account.role,
+            token: `jwt_simulated_${Date.now()}`,
+            mustChangePassword: false,
+          });
         }
       }
       return result;
@@ -163,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, sendPasswordReset, changePassword, register }}>
+    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, sendPasswordReset, changePassword, clearMustChangePw, register }}>
       {children}
     </AuthContext.Provider>
   );

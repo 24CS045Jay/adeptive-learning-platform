@@ -134,7 +134,7 @@ function StudentQuizzesPage() {
           <button
             type="button"
             onClick={() => setShowLeaderboardModal(true)}
-            className="flex items-center gap-2 rounded-xl border border-indigo-brand/30 bg-indigo-brand/5 px-4 py-2 text-sm font-semibold text-indigo-brand hover:bg-indigo-brand/10 transition"
+            className="flex items-center gap-2 rounded-xl border border-violet/30 bg-indigo-brand/5 px-4 py-2 text-sm font-semibold text-violet hover:bg-indigo-brand/10 transition"
           >
             <Trophy className="h-4 w-4 text-amber-500" /> Subject Leaderboard
           </button>
@@ -143,43 +143,43 @@ function StudentQuizzesPage() {
 
       {/* ── Gamification Header Stats ── */}
       <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <div className="rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)] flex items-center gap-3">
+        <div className="rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)] flex items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-brand/15 text-amber-600">
             <Trophy className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Student XP & Level</div>
-            <div className="text-xl font-bold text-slate-900">{gamification.xp} XP <span className="text-xs text-indigo-brand font-semibold">(Lvl {gamification.level})</span></div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Student XP & Level</div>
+            <div className="text-xl font-bold text-foreground">{gamification.xp} XP <span className="text-xs text-violet font-semibold">(Lvl {gamification.level})</span></div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)] flex items-center gap-3">
+        <div className="rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)] flex items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-brand/10 text-red-600">
             <Flame className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Study Streak</div>
-            <div className="text-xl font-bold text-slate-900">{gamification.streakDays} Days <span className="text-xs text-red-500 font-semibold">⚡ Active</span></div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Study Streak</div>
+            <div className="text-xl font-bold text-foreground">{gamification.streakDays} Days <span className="text-xs text-red-500 font-semibold">⚡ Active</span></div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)] flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-brand/10 text-indigo-brand">
+        <div className="rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)] flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-brand/10 text-violet">
             <Award className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Badges Unlocked</div>
-            <div className="text-xl font-bold text-slate-900">{gamification.badges.length} Badges</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Badges Unlocked</div>
+            <div className="text-xl font-bold text-foreground">{gamification.badges.length} Badges</div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)] flex items-center gap-3">
+        <div className="rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(30,27,60,0.08)] flex items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-brand/10 text-green-brand">
             <ListChecks className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Available Quizzes</div>
-            <div className="text-xl font-bold text-slate-900">{quizzes.length} Quizzes</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Available Quizzes</div>
+            <div className="text-xl font-bold text-foreground">{quizzes.length} Quizzes</div>
           </div>
         </div>
       </div>
@@ -192,24 +192,24 @@ function StudentQuizzesPage() {
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-brand/15 text-amber-700">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-brand/15 text-gold">
                       <ListChecks className="h-5 w-5" />
                     </div>
                     <div>
-                      <div className="font-serif text-base font-bold text-slate-900 leading-tight">{q.title}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{q.subjectName}</div>
+                      <div className="font-serif text-base font-bold text-foreground leading-tight">{q.title}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{q.subjectName}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-1.5 text-xs text-slate-500">
+                <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
                   <div className="flex justify-between">
                     <span>Questions:</span>
-                    <span className="font-semibold text-slate-700">{q.totalQuestions} Questions</span>
+                    <span className="font-semibold text-foreground">{q.totalQuestions} Questions</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Best Score:</span>
-                    <span className="font-semibold text-indigo-brand">
+                    <span className="font-semibold text-violet">
                       {q.bestScore != null ? `${q.bestScore}%` : "Not attempted"}
                     </span>
                   </div>
@@ -220,7 +220,7 @@ function StudentQuizzesPage() {
                 </div>
               </div>
 
-              <div className="mt-6 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <div className="mt-6 pt-3 border-t border-border flex items-center justify-between">
                 <Pill tone={q.bestScore == null ? "slate" : q.bestScore >= 80 ? "green" : "amber"}>
                   {q.bestScore == null ? "New Quiz" : q.bestScore >= 80 ? "Mastered ✓" : "Review Needed"}
                 </Pill>
@@ -239,24 +239,24 @@ function StudentQuizzesPage() {
           </div>
 
           <div>
-            <div className="font-serif text-2xl font-bold text-slate-900">Quiz Completed!</div>
-            <p className="mt-1 text-sm text-slate-500">{activeQuiz.title}</p>
+            <div className="font-serif text-2xl font-bold text-foreground">Quiz Completed!</div>
+            <p className="mt-1 text-sm text-muted-foreground">{activeQuiz.title}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
-            <div className="rounded-xl bg-slate-50 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Score Accuracy</div>
+            <div className="rounded-xl bg-accent/40 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Score Accuracy</div>
               <div className="text-3xl font-bold text-green-600 mt-1">
                 {Math.round(((userScore) / activeQuiz.questions.length) * 100)}%
               </div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">XP Earned</div>
-              <div className="text-3xl font-bold text-indigo-brand mt-1">+{earnedXp + 50} XP</div>
+            <div className="rounded-xl bg-accent/40 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">XP Earned</div>
+              <div className="text-3xl font-bold text-violet mt-1">+{earnedXp + 50} XP</div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-indigo-brand/20 bg-indigo-brand/5 p-4 text-xs text-indigo-brand font-medium">
+          <div className="rounded-xl border border-violet/20 bg-indigo-brand/5 p-4 text-xs text-violet font-medium">
             ⚡ 5-Day Study Streak maintained! You earned +50 bonus XP for completing this assessment.
           </div>
 
@@ -264,14 +264,14 @@ function StudentQuizzesPage() {
             <button
               type="button"
               onClick={() => setActiveQuiz(null)}
-              className="rounded-xl bg-indigo-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-brand-hover shadow-sm"
+              className="rounded-xl bg-violet px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-hover shadow-sm"
             >
               Back to All Quizzes
             </button>
             <button
               type="button"
               onClick={() => startQuiz(activeQuiz)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent/40"
             >
               <RotateCcw className="h-4 w-4" /> Retake
             </button>
@@ -281,21 +281,21 @@ function StudentQuizzesPage() {
         /* ── Active Quiz Runner ── */
         <Card className="max-w-2xl mx-auto space-y-6">
           {/* Header Progress Bar */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center justify-between border-b border-border pb-3">
             <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Question {currentQIndex + 1} of {activeQuiz.questions.length}
               </span>
-              <div className="font-serif text-lg font-bold text-slate-900">{activeQuiz.title}</div>
+              <div className="font-serif text-lg font-bold text-foreground">{activeQuiz.title}</div>
             </div>
 
             {/* Dynamic Adaptive Difficulty Pill */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-medium">Adaptive Level:</span>
+              <span className="text-xs text-muted-foreground font-medium">Adaptive Level:</span>
               <span className={cn(
                 "rounded-full px-3 py-1 text-xs font-bold capitalize shadow-2xs",
-                adaptiveDifficulty === "easy" ? "bg-green-100 text-green-700" :
-                adaptiveDifficulty === "medium" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+                adaptiveDifficulty === "easy" ? "bg-success/10 text-success" :
+                adaptiveDifficulty === "medium" ? "bg-gold/10 text-gold" : "bg-danger/10 text-danger"
               )}>
                 {adaptiveDifficulty} Level 🔥
               </span>
@@ -305,7 +305,7 @@ function StudentQuizzesPage() {
           {/* Question Prompt */}
           {currentQ && (
             <div className="space-y-4">
-              <div className="text-base font-semibold text-slate-800 leading-relaxed font-sans">
+              <div className="text-base font-semibold text-foreground leading-relaxed font-sans">
                 {currentQ.prompt}
               </div>
 
@@ -332,12 +332,12 @@ function StudentQuizzesPage() {
                         className={cn(
                           "w-full flex items-center justify-between rounded-xl border p-3.5 text-xs text-left transition font-medium",
                           submittedAnswer && isCorrectOpt
-                            ? "border-green-500 bg-green-50 text-green-800 font-bold"
+                            ? "border-green-500 bg-success/5 text-green-800 font-bold"
                             : submittedAnswer && isSelected && !isCorrectOpt
-                            ? "border-red-400 bg-red-50 text-red-700"
+                            ? "border-red-400 bg-danger/5 text-danger"
                             : isSelected
-                            ? "border-indigo-brand bg-indigo-brand/10 text-indigo-brand font-semibold shadow-2xs"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-indigo-brand/40"
+                            ? "border-violet bg-indigo-brand/10 text-violet font-semibold shadow-2xs"
+                            : "border-border bg-card text-foreground hover:border-violet/40"
                         )}
                       >
                         <span>{opt}</span>
@@ -358,10 +358,10 @@ function StudentQuizzesPage() {
                     disabled={submittedAnswer}
                     placeholder="Write your explanation here for AI auto-grading..."
                     rows={4}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-xs outline-none focus:border-indigo-brand"
+                    className="w-full rounded-xl border border-border bg-card p-3.5 text-xs outline-none focus:border-violet"
                   />
                   {submittedAnswer && (
-                    <div className="rounded-xl border border-green-200 bg-green-50 p-3.5 text-xs text-green-800 space-y-1">
+                    <div className="rounded-xl border border-green-200 bg-success/5 p-3.5 text-xs text-green-800 space-y-1">
                       <div className="font-bold flex items-center gap-1">
                         <CheckCircle2 className="h-4 w-4 text-green-600" /> AI Auto-Graded Score: 95% Match
                       </div>
@@ -373,13 +373,13 @@ function StudentQuizzesPage() {
 
               {/* Instant Explanation & Source Doc Citation */}
               {submittedAnswer && (
-                <div className="rounded-xl border border-indigo-brand/20 bg-indigo-brand/5 p-4 space-y-2 text-xs">
-                  <div className="font-bold text-indigo-brand flex items-center gap-1">
+                <div className="rounded-xl border border-violet/20 bg-indigo-brand/5 p-4 space-y-2 text-xs">
+                  <div className="font-bold text-violet flex items-center gap-1">
                     <Sparkles className="h-4 w-4" /> Faculty Source Explanation & Citation
                   </div>
-                  <p className="text-slate-700">{currentQ.explanation}</p>
-                  <div className="text-[11px] text-slate-500 font-semibold flex items-center gap-1 pt-1">
-                    <FileText className="h-3.5 w-3.5 text-indigo-brand" /> Citation: {currentQ.sourceDoc} (Page {currentQ.sourcePage})
+                  <p className="text-foreground">{currentQ.explanation}</p>
+                  <div className="text-[11px] text-muted-foreground font-semibold flex items-center gap-1 pt-1">
+                    <FileText className="h-3.5 w-3.5 text-violet" /> Citation: {currentQ.sourceDoc} (Page {currentQ.sourcePage})
                   </div>
                 </div>
               )}
@@ -387,11 +387,11 @@ function StudentQuizzesPage() {
           )}
 
           {/* Footer Submit / Next Button */}
-          <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+          <div className="flex items-center justify-between border-t border-border pt-4">
             <button
               type="button"
               onClick={() => setActiveQuiz(null)}
-              className="text-xs font-semibold text-slate-400 hover:text-slate-600"
+              className="text-xs font-semibold text-muted-foreground hover:text-muted-foreground"
             >
               Quit Quiz
             </button>
@@ -401,7 +401,7 @@ function StudentQuizzesPage() {
                 type="button"
                 onClick={handleConfirmAnswer}
                 disabled={selectedOption === null && !shortAnswerInput.trim()}
-                className="rounded-xl bg-indigo-brand px-6 py-2 text-xs font-semibold text-white hover:bg-indigo-brand-hover disabled:opacity-50 transition shadow-sm"
+                className="rounded-xl bg-violet px-6 py-2 text-xs font-semibold text-white hover:bg-violet-hover disabled:opacity-50 transition shadow-sm"
               >
                 Submit Answer
               </button>
@@ -409,7 +409,7 @@ function StudentQuizzesPage() {
               <button
                 type="button"
                 onClick={handleNextQuestion}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-brand px-6 py-2 text-xs font-semibold text-white hover:bg-indigo-brand-hover transition shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-violet px-6 py-2 text-xs font-semibold text-white hover:bg-violet-hover transition shadow-sm"
               >
                 {currentQIndex + 1 < activeQuiz.questions.length ? "Next Question" : "Finish Quiz"} <ArrowRight className="h-4 w-4" />
               </button>
@@ -421,15 +421,15 @@ function StudentQuizzesPage() {
       {/* ── Leaderboard Modal ── */}
       {showLeaderboardModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2 font-serif text-lg font-bold text-slate-900">
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2 font-serif text-lg font-bold text-foreground">
                 <Trophy className="h-5 w-5 text-amber-500" /> Subject Leaderboard
               </div>
               <button
                 type="button"
                 onClick={() => setShowLeaderboardModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-foreground hover:text-muted-foreground"
               >
                 ✕
               </button>
@@ -441,24 +441,24 @@ function StudentQuizzesPage() {
                   key={entry.email}
                   className={cn(
                     "flex items-center justify-between rounded-xl border p-3 text-xs",
-                    entry.rank === 1 ? "border-amber-200 bg-amber-50" : "border-slate-100 bg-slate-50"
+                    entry.rank === 1 ? "border-amber-200 bg-gold/5" : "border-border bg-accent/40"
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <span className={cn(
                       "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold",
-                      entry.rank === 1 ? "bg-amber-400 text-white" : "bg-slate-200 text-slate-700"
+                      entry.rank === 1 ? "bg-amber-400 text-white" : "bg-slate-200 text-foreground"
                     )}>
                       #{entry.rank}
                     </span>
                     <div>
-                      <div className="font-bold text-slate-900">{entry.name}</div>
-                      <div className="text-[11px] text-slate-500">{entry.badge}</div>
+                      <div className="font-bold text-foreground">{entry.name}</div>
+                      <div className="text-[11px] text-muted-foreground">{entry.badge}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-extrabold text-indigo-brand">{entry.xp} XP</div>
-                    <div className="text-[10px] text-slate-400">{entry.quizzesTaken} Quizzes</div>
+                    <div className="font-extrabold text-violet">{entry.xp} XP</div>
+                    <div className="text-[10px] text-muted-foreground">{entry.quizzesTaken} Quizzes</div>
                   </div>
                 </div>
               ))}
@@ -468,7 +468,7 @@ function StudentQuizzesPage() {
               <button
                 type="button"
                 onClick={() => setShowLeaderboardModal(false)}
-                className="rounded-xl bg-indigo-brand px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-brand-hover"
+                className="rounded-xl bg-violet px-4 py-2 text-xs font-semibold text-white hover:bg-violet-hover"
               >
                 Close Leaderboard
               </button>

@@ -1,36 +1,28 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useId } from "react";
+import { useState, useId, useCallback, useEffect, useRef } from "react";
 import {
-  GraduationCap,
-  User,
-  Users,
-  Shield,
-  Eye,
-  EyeOff,
-  Chrome,
-  ArrowLeft,
-  Sparkles,
-  BookOpen,
-  Brain,
-  ChartBar,
+  GraduationCap, User, Users, Shield, Eye, EyeOff, Chrome,
+  ArrowLeft, Moon, Sun, X, UserPlus,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/hooks/use-theme";
+import { LoginAnimation } from "@/components/login-animation";
 
-export const Route = createFileRoute("/")(({
+export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Sign in · AI Tutor" },
       { name: "description", content: "Sign in to AI Tutor — grounded academic tutoring for CSPIT CSE." },
       { property: "og:title", content: "Sign in · AI Tutor" },
-      { property: "og:description", content: "Sign in to AI Tutor — grounded academic tutoring for CSPIT CSE." },
     ],
   }),
   component: LoginPage,
-}));
+});
 
-// ─── Role config ────────────────────────────────────────────────────────────
+// ─── Role config ─────────────────────────────────────────────────────────────
 
 const ROLES = [
   {
@@ -39,11 +31,7 @@ const ROLES = [
     icon: User,
     headline: "Student Sign In",
     subtext: "Ask, learn, and quiz yourself.",
-    accent: "#5b4bd6",
-    accentLight: "rgba(91,75,214,0.12)",
-    accentClass: "text-indigo-brand",
-    btnClass: "bg-indigo-brand hover:bg-indigo-brand-hover",
-    tabActive: "border-indigo-brand text-indigo-brand",
+    accentClass: "text-violet",
     placeholder: { email: "student@charusat.edu.in", password: "student123" },
   },
   {
@@ -52,11 +40,7 @@ const ROLES = [
     icon: Users,
     headline: "Faculty Sign In",
     subtext: "Manage content and answer student queries.",
-    accent: "#f0b429",
-    accentLight: "rgba(240,180,41,0.15)",
-    accentClass: "text-amber-brand",
-    btnClass: "bg-amber-brand hover:bg-amber-500",
-    tabActive: "border-amber-brand text-amber-brand",
+    accentClass: "text-gold",
     placeholder: { email: "faculty@charusat.edu.in", password: "faculty123" },
   },
   {
@@ -65,145 +49,285 @@ const ROLES = [
     icon: Shield,
     headline: "Admin Sign In",
     subtext: "Operate the institution knowledge base.",
-    accent: "#14b8a6",
-    accentLight: "rgba(20,184,166,0.12)",
     accentClass: "text-teal-brand",
-    btnClass: "bg-teal-brand hover:bg-teal-600",
-    tabActive: "border-teal-brand text-teal-brand",
     placeholder: { email: "admin@charusat.edu.in", password: "admin123" },
   },
 ] as const;
 
-type ViewMode = "login" | "register" | "forgot";
+type ViewMode = "login" | "forgot";
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+// ─── Ambient Particle Node ────────────────────────────────────────────────────
+
+interface ParticleNode {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+}
+
+const NUM_PARTICLES = 14;
+const CONNECTION_DIST = 180;
+
+function useParticles(count: number) {
+  const [nodes, setNodes] = useState<ParticleNode[]>(() =>
+    Array.from({ length: count }, (_, i) => ({
+      id: i,
+      x: Math.random() * (typeof window !== "undefined" ? window.innerWidth : 1200),
+      y: Math.random() * (typeof window !== "undefined" ? window.innerHeight : 800),
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      size: 2 + Math.random() * 2.5,
+    }))
+  );
+
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+
+    const tick = () => {
+      setNodes((prev) =>
+        prev.map((n) => {
+          let nx = n.x + n.vx;
+          let ny = n.y + n.vy;
+          let nvx = n.vx;
+          let nvy = n.vy;
+          if (nx < 0 || nx > W) nvx = -nvx;
+          if (ny < 0 || ny > H) nvy = -nvy;
+          nx = Math.max(0, Math.min(W, nx));
+          ny = Math.max(0, Math.min(H, ny));
+          return { ...n, x: nx, y: ny, vx: nvx, vy: nvy };
+        })
+      );
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  return nodes;
+}
+
+function ParticleCanvas() {
+  const nodes = useParticles(NUM_PARTICLES);
+
+  const connections: Array<{ x1: number; y1: number; x2: number; y2: number; opacity: number }> = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < CONNECTION_DIST) {
+        connections.push({
+          x1: nodes[i].x, y1: nodes[i].y,
+          x2: nodes[j].x, y2: nodes[j].y,
+          opacity: (1 - dist / CONNECTION_DIST) * 0.12,
+        });
+      }
+    }
+  }
+
+  return (
+    <svg
+      className="pointer-events-none fixed inset-0 h-full w-full"
+      style={{ zIndex: 0 }}
+      aria-hidden="true"
+    >
+      {connections.map((c, i) => (
+        <line
+          key={i}
+          x1={c.x1} y1={c.y1}
+          x2={c.x2} y2={c.y2}
+          stroke="#8b5cf6"
+          strokeWidth={0.8}
+          strokeOpacity={c.opacity}
+        />
+      ))}
+      {nodes.map((n) => (
+        <circle
+          key={n.id}
+          cx={n.x} cy={n.y} r={n.size}
+          fill="#8b5cf6"
+          fillOpacity={0.18}
+        />
+      ))}
+    </svg>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 function LoginPage() {
   const [activeRole, setActiveRole] = useState<Role>("student");
   const [view, setView] = useState<ViewMode>("login");
+  const [animating, setAnimating] = useState(false);
+  const [pendingRole, setPendingRole] = useState<Role>("student");
+  const navigate = useNavigate();
+  const { isDark, toggle } = useTheme();
+
+  const handleLoginSuccess = useCallback((role: Role, mustChangePw: boolean) => {
+    if (mustChangePw) {
+      // Bypass animation — go straight to forced password change
+      navigate({ to: "/change-password" });
+      return;
+    }
+    setPendingRole(role);
+    setAnimating(true);
+  }, [navigate]);
+
+  const handleAnimationComplete = useCallback(() => {
+    setAnimating(false);
+    navigate({ to: `/${pendingRole}` });
+  }, [navigate, pendingRole]);
+
   const roleConfig = ROLES.find((r) => r.key === activeRole)!;
 
   return (
-    <div className="flex min-h-screen bg-canvas font-sans">
-      {/* ── Left branding column ── */}
-      <BrandingPanel activeRole={activeRole} />
+    <div
+      className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 font-sans"
+      style={{ background: isDark ? "#0d0d14" : "var(--color-background)" }}
+    >
+      {/* ── Ambient background glows ── */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute -left-32 top-1/4 h-[500px] w-[500px] rounded-full opacity-[0.10] blur-[100px]"
+          style={{ background: "radial-gradient(circle, #8b5cf6 0%, transparent 70%)" }}
+        />
+        <div
+          className="absolute -right-32 bottom-1/4 h-[400px] w-[400px] rounded-full opacity-[0.07] blur-[90px]"
+          style={{ background: "radial-gradient(circle, #f5c451 0%, transparent 70%)" }}
+        />
+      </div>
 
-      {/* ── Right form column ── */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:px-16">
-        {/* Mobile logo */}
-        <div className="mb-8 flex items-center gap-3 lg:hidden">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy">
-            <GraduationCap className="h-5 w-5 text-amber-brand" />
+      {/* ── Concept Graph particle canvas ── */}
+      <ParticleCanvas />
+
+      {/* ── Theme toggle top-right ── */}
+      <div className="fixed right-6 top-5 z-10">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          className="theme-toggle-pill"
+        >
+          <span className={cn("absolute left-2 flex h-5 w-5 items-center justify-center transition-opacity", isDark ? "opacity-30" : "opacity-0")}>
+            <Sun className="h-3.5 w-3.5 text-gold" />
+          </span>
+          <span className={cn("absolute right-2 flex h-5 w-5 items-center justify-center transition-opacity", !isDark ? "opacity-30" : "opacity-0")}>
+            <Moon className="h-3.5 w-3.5 text-violet" />
+          </span>
+          <span className={cn("theme-toggle-thumb", isDark ? "is-dark" : "is-light")}>
+            <AnimatePresence mode="wait" initial={false}>
+              {isDark ? (
+                <motion.span key="sun" initial={{ rotate: -45, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 45, opacity: 0 }} transition={{ duration: 0.15 }}>
+                  <Sun className="h-3.5 w-3.5 text-white" />
+                </motion.span>
+              ) : (
+                <motion.span key="moon" initial={{ rotate: 45, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -45, opacity: 0 }} transition={{ duration: 0.15 }}>
+                  <Moon className="h-3.5 w-3.5 text-white" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </span>
+        </button>
+      </div>
+
+      {/* ── Login card ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-md"
+      >
+        {/* Book card outer glow */}
+        <div
+          className="relative rounded-2xl"
+          style={{
+            boxShadow: "0 0 0 1px oklch(0.62 0.22 293 / 15%), 0 32px 80px -20px rgba(0,0,0,0.55), 0 0 60px -10px oklch(0.62 0.22 293 / 10%)",
+          }}
+        >
+          {/* Subtle "book spine" center line */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-4 bottom-4 w-px -translate-x-1/2 rounded-full"
+            style={{ background: "linear-gradient(to bottom, transparent, oklch(0.62 0.22 293 / 8%), oklch(0.62 0.22 293 / 12%), oklch(0.62 0.22 293 / 8%), transparent)" }}
+            aria-hidden="true"
+          />
+
+          <div
+            className="rounded-2xl border border-border px-8 py-10"
+            style={{ background: isDark ? "#17171f" : "var(--color-card)" }}
+          >
+            {/* Logo */}
+            <div className="mb-7 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet/15 ring-1 ring-violet/25 shadow-[0_0_12px_-2px_oklch(0.62_0.22_293_/_30%)]">
+                <GraduationCap className="h-5 w-5 text-violet" />
+              </div>
+              <div className="leading-tight">
+                <div className="font-serif text-xl font-bold text-foreground">AI Tutor</div>
+                <div className="text-[11px] text-muted-foreground">CSPIT CSE · RAG Platform</div>
+              </div>
+            </div>
+
+            {/* Role tabs */}
+            <RoleTabs activeRole={activeRole} onSelect={(r) => { setActiveRole(r); setView("login"); }} />
+
+            {/* Forms */}
+            <AnimatePresence mode="wait">
+              {view === "login" && (
+                <motion.div
+                  key={`login-${activeRole}`}
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <LoginForm
+                    roleConfig={roleConfig}
+                    onForgot={() => setView("forgot")}
+                    onLoginSuccess={handleLoginSuccess}
+                  />
+                </motion.div>
+              )}
+              {view === "forgot" && (
+                <motion.div
+                  key="forgot"
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <ForgotPasswordForm onBack={() => setView("login")} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <div className="leading-tight">
-            <div className="font-serif text-2xl font-bold text-navy">AI Tutor</div>
-            <div className="text-[11px] text-slate-500">CSPIT CSE · RAG Platform</div>
-          </div>
-        </div>
-
-        {/* Card */}
-        <div className="w-full max-w-md rounded-3xl bg-white px-8 py-10 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_20px_60px_-15px_rgba(30,27,60,0.12)]">
-          {/* Role tabs */}
-          <RoleTabs activeRole={activeRole} onSelect={setActiveRole} />
-
-          {/* View switcher */}
-          {view === "login" && (
-            <LoginForm roleConfig={roleConfig} onForgot={() => setView("forgot")} onRegister={() => setView("register")} />
-          )}
-          {view === "register" && (
-            <RegisterForm roleConfig={roleConfig} onBack={() => setView("login")} />
-          )}
-          {view === "forgot" && (
-            <ForgotPasswordForm onBack={() => setView("login")} />
-          )}
         </div>
 
         {/* Demo hint */}
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-5 text-center text-xs text-muted-foreground opacity-70">
           Demo credentials are pre-filled — just click <strong>Login</strong>.
         </p>
-      </div>
+      </motion.div>
+
+      {/* ── Book animation overlay ── */}
+      <LoginAnimation
+        role={pendingRole}
+        active={animating}
+        onComplete={handleAnimationComplete}
+      />
     </div>
   );
 }
 
-// ─── Branding Panel ──────────────────────────────────────────────────────────
-
-function BrandingPanel({ activeRole }: { activeRole: Role }) {
-  const roleConfig = ROLES.find((r) => r.key === activeRole)!;
-  const features = [
-    { icon: Sparkles, text: "RAG-powered answers from your syllabus" },
-    { icon: Brain,    text: "Adaptive difficulty based on your level" },
-    { icon: BookOpen, text: "Multi-format document knowledge base" },
-    { icon: ChartBar, text: "Progress analytics & weak topic detection" },
-  ];
-  return (
-    <div
-      className="relative hidden w-[420px] shrink-0 flex-col justify-between overflow-hidden px-12 py-14 lg:flex"
-      style={{ background: `linear-gradient(145deg, #1e1b3c 0%, #2d2a55 60%, ${roleConfig.accent}55 100%)` }}
-    >
-      {/* Decorative blobs */}
-      <div
-        className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full opacity-20 blur-3xl transition-colors duration-700"
-        style={{ background: roleConfig.accent }}
-      />
-      <div
-        className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full opacity-15 blur-3xl transition-colors duration-700"
-        style={{ background: roleConfig.accent }}
-      />
-
-      {/* Logo */}
-      <div>
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-brand/20">
-            <GraduationCap className="h-6 w-6 text-amber-brand" />
-          </div>
-          <div className="leading-tight">
-            <div className="font-serif text-2xl font-bold text-white">AI Tutor</div>
-            <div className="text-[11px] text-slate-400">CSPIT CSE · RAG Platform</div>
-          </div>
-        </div>
-
-        <h2 className="mt-12 font-serif text-3xl font-bold leading-snug text-white">
-          Grounded answers.<br />Adaptive learning.
-        </h2>
-        <p className="mt-4 text-sm leading-relaxed text-slate-300">
-          Every answer is grounded in your faculty's approved course material — not the open web.
-        </p>
-
-        {/* Feature list */}
-        <ul className="mt-10 space-y-4">
-          {features.map(({ icon: Icon, text }) => (
-            <li key={text} className="flex items-center gap-3 text-sm text-slate-300">
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-700"
-                style={{ background: roleConfig.accentLight, color: roleConfig.accent }}
-              >
-                <Icon className="h-4 w-4" />
-              </div>
-              {text}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Bottom floating card */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-        <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: roleConfig.accent }}>
-          Currently active
-        </div>
-        <div className="mt-2 text-lg font-bold text-white">{ROLES.find(r=>r.key===activeRole)?.headline}</div>
-        <div className="mt-1 text-sm text-slate-300">{ROLES.find(r=>r.key===activeRole)?.subtext}</div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Role Tabs ───────────────────────────────────────────────────────────────
+// ─── Role Tabs ────────────────────────────────────────────────────────────────
 
 function RoleTabs({ activeRole, onSelect }: { activeRole: Role; onSelect: (r: Role) => void }) {
   return (
-    <div className="mb-8 flex rounded-2xl bg-slate-100 p-1">
+    <div className="mb-7 flex rounded-xl bg-muted/60 p-1">
       {ROLES.map((r) => {
         const Icon = r.icon;
         const isActive = activeRole === r.key;
@@ -214,14 +338,19 @@ function RoleTabs({ activeRole, onSelect }: { activeRole: Role; onSelect: (r: Ro
             type="button"
             onClick={() => onSelect(r.key)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-medium transition-all duration-200",
-              isActive
-                ? "bg-white shadow-sm " + r.accentClass
-                : "text-slate-500 hover:text-slate-700",
+              "relative flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-all duration-200",
+              isActive ? "bg-card text-violet shadow-sm" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4" />
-            <span>{r.label}</span>
+            {isActive && (
+              <motion.div
+                layoutId="role-tab-bg"
+                className="absolute inset-0 rounded-lg bg-card shadow-sm"
+                transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              />
+            )}
+            <Icon className={cn("relative z-10 h-4 w-4 transition-all", isActive && "text-violet")} />
+            <span className="relative z-10">{r.label}</span>
           </button>
         );
       })}
@@ -229,285 +358,307 @@ function RoleTabs({ activeRole, onSelect }: { activeRole: Role; onSelect: (r: Ro
   );
 }
 
-// ─── Login Form ──────────────────────────────────────────────────────────────
+// ─── Login Form ───────────────────────────────────────────────────────────────
 
 function LoginForm({
   roleConfig,
   onForgot,
-  onRegister,
+  onLoginSuccess,
 }: {
   roleConfig: (typeof ROLES)[number];
   onForgot: () => void;
-  onRegister: () => void;
+  onLoginSuccess: (role: Role, mustChangePw: boolean) => void;
 }) {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login, loginWithGoogle } = useAuth();
   const id = useId();
 
-  const [email, setEmail] = useState(roleConfig.placeholder.email);
-  const [password, setPassword] = useState(roleConfig.placeholder.password);
+  const [email, setEmail] = useState<string>(roleConfig.placeholder.email);
+  const [password, setPassword] = useState<string>(roleConfig.placeholder.password);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
 
-  // Reset pre-fill when role changes
-  const currentPlaceholder = roleConfig.placeholder;
+  // Reset pre-filled when role tab changes
+  useEffect(() => {
+    setEmail(roleConfig.placeholder.email);
+    setPassword(roleConfig.placeholder.password);
+    setError(null);
+  }, [roleConfig.key]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    // Small artificial delay for UX
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 380));
     const result = login(roleConfig.key, email.trim(), password);
     setLoading(false);
-    if (!result.ok) {
-      setError(result.error ?? "Login failed.");
-      return;
-    }
-    navigate({ to: `/${roleConfig.key}` });
+    if (!result.ok) { setError(result.error ?? "Login failed."); return; }
+    onLoginSuccess(roleConfig.key, result.mustChangePassword ?? false);
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      {/* Headline */}
-      <div className="mb-6">
-        <h1 className="font-serif text-2xl font-bold text-slate-900">{roleConfig.headline}</h1>
-        <p className="mt-1 text-sm text-slate-500">{roleConfig.subtext}</p>
-      </div>
-
-      {/* Error banner */}
-      {error && (
-        <div
-          id={`${id}-error`}
-          role="alert"
-          className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
-          <span className="mt-0.5 text-base">⚠</span>
-          <span>{error}</span>
+    <>
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="mb-6">
+          <h1 className="font-serif text-2xl font-bold text-foreground">{roleConfig.headline}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{roleConfig.subtext}</p>
         </div>
-      )}
 
-      {/* Google button */}
-      <button
-        type="button"
-        onClick={() => setError("Google sign-in is not available in the demo.")}
-        className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-      >
-        <Chrome className="h-4 w-4" />
-        Continue with Google
-      </button>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            id={`${id}-error`}
+            role="alert"
+            className="mb-5 flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/8 px-4 py-3 text-sm text-danger"
+          >
+            <span className="mt-0.5">⚠</span>
+            <span>{error}</span>
+          </motion.div>
+        )}
 
-      {/* Divider */}
-      <div className="relative my-5 flex items-center gap-3">
-        <div className="flex-1 border-t border-slate-200" />
-        <span className="text-xs text-slate-400">Or with</span>
-        <div className="flex-1 border-t border-slate-200" />
-      </div>
+        {/* Google button */}
+        <button
+          type="button"
+          onClick={() => setShowGoogleModal(true)}
+          className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-card/50 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/30 hover:border-violet/25"
+        >
+          <Chrome className="h-4 w-4 text-muted-foreground" />
+          Continue with Google
+        </button>
 
-      {/* Email */}
-      <div className="mb-4">
-        <label htmlFor={`${id}-email`} className="mb-1.5 block text-sm font-medium text-slate-700">
-          Email
-        </label>
-        <input
-          id={`${id}-email`}
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={currentPlaceholder.email}
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-0 transition focus:border-slate-300 focus:ring-2 focus:ring-offset-0"
-          style={{ "--tw-ring-color": roleConfig.accent + "40" } as React.CSSProperties}
-          required
-        />
-      </div>
+        {/* Divider */}
+        <div className="relative my-5 flex items-center gap-3">
+          <div className="flex-1 border-t border-border" />
+          <span className="text-xs text-muted-foreground">Or with</span>
+          <div className="flex-1 border-t border-border" />
+        </div>
 
-      {/* Password */}
-      <div className="mb-2">
-        <label htmlFor={`${id}-password`} className="mb-1.5 block text-sm font-medium text-slate-700">
-          Password
-        </label>
-        <div className="relative">
+        {/* Email */}
+        <div className="mb-4">
+          <label htmlFor={`${id}-email`} className="mb-1.5 block text-sm font-medium text-foreground">
+            Email
+          </label>
           <input
-            id={`${id}-password`}
-            type={showPw ? "text" : "password"}
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-offset-0"
-            style={{ "--tw-ring-color": roleConfig.accent + "40" } as React.CSSProperties}
+            id={`${id}-email`}
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={roleConfig.placeholder.email}
             required
+            className="w-full rounded-xl border border-border bg-background/60 px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]"
           />
+        </div>
+
+        {/* Password */}
+        <div className="mb-2">
+          <label htmlFor={`${id}-password`} className="mb-1.5 block text-sm font-medium text-foreground">
+            Password
+          </label>
+          <div className="relative">
+            <input
+              id={`${id}-password`}
+              type={showPw ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full rounded-xl border border-border bg-background/60 px-4 py-2.5 pr-11 text-sm text-foreground outline-none transition focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]"
+            />
+            <button
+              type="button"
+              aria-label={showPw ? "Hide password" : "Show password"}
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
+            >
+              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Forgot link */}
+        <div className="mb-6 flex justify-end">
           <button
             type="button"
-            aria-label={showPw ? "Hide password" : "Show password"}
-            onClick={() => setShowPw((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            onClick={onForgot}
+            className="text-xs font-medium text-violet transition hover:underline hover:text-violet/80"
           >
-            {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            Forgot password?
           </button>
         </div>
-      </div>
 
-      {/* Forgot link */}
-      <div className="mb-6 flex justify-end">
-        <button
-          type="button"
-          onClick={onForgot}
-          className={cn("text-xs font-medium transition hover:underline", roleConfig.accentClass)}
+        {/* Submit */}
+        <motion.button
+          id={`login-btn-${roleConfig.key}`}
+          type="submit"
+          disabled={loading}
+          whileTap={{ scale: 0.97 }}
+          whileHover={{ boxShadow: "0 0 22px -4px oklch(0.62 0.22 293 / 55%)" }}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9d72f7] to-[#7c3aed] py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60"
         >
-          Forgot password?
-        </button>
-      </div>
+          {loading ? "Signing in…" : "Login"}
+        </motion.button>
+      </form>
 
-      {/* Submit */}
-      <button
-        id={`login-btn-${roleConfig.key}`}
-        type="submit"
-        disabled={loading}
-        className={cn(
-          "flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 disabled:opacity-60",
-          roleConfig.btnClass,
+      <AnimatePresence>
+        {showGoogleModal && (
+          <GoogleSignInModal
+            role={roleConfig.key}
+            onClose={() => setShowGoogleModal(false)}
+            onSuccess={(role) => {
+              setShowGoogleModal(false);
+              onLoginSuccess(role, false);
+            }}
+          />
         )}
-      >
-        {loading ? (
-          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-        ) : null}
-        {loading ? "Signing in…" : "Login"}
-      </button>
-
-      {/* Register link */}
-      <p className="mt-5 text-center text-sm text-slate-500">
-        Don't have an account?{" "}
-        <button
-          type="button"
-          onClick={onRegister}
-          className={cn("font-medium transition hover:underline", roleConfig.accentClass)}
-        >
-          Register
-        </button>
-      </p>
-    </form>
+      </AnimatePresence>
+    </>
   );
 }
 
-// ─── Register Form ───────────────────────────────────────────────────────────
+// ─── Google Sign In Modal ─────────────────────────────────────────────────────
 
-function RegisterForm({
-  roleConfig,
-  onBack,
+function GoogleSignInModal({
+  role,
+  onClose,
+  onSuccess,
 }: {
-  roleConfig: (typeof ROLES)[number];
-  onBack: () => void;
+  role: Role;
+  onClose: () => void;
+  onSuccess: (role: Role) => void;
 }) {
-  const { register } = useAuth();
-  const navigate = useNavigate();
-  const id = useId();
+  const { loginWithGoogle } = useAuth();
+  const [loadingEmail, setLoadingEmail] = useState<string | null>(null);
+  const [customEmail, setCustomEmail] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const demoAccounts = role === "student"
+    ? [
+      { name: "Aarav Patel", email: "student@charusat.edu.in", avatar: "AP" },
+      { name: "Meera Joshi", email: "meera@charusat.edu.in", avatar: "MJ" },
+    ]
+    : role === "faculty"
+      ? [
+        { name: "Dr. Nisha Shah", email: "faculty@charusat.edu.in", avatar: "NS" },
+        { name: "Prof. Anil Kumar", email: "anil@charusat.edu.in", avatar: "AK" },
+      ]
+      : [
+        { name: "Rahul Mehta", email: "admin@charusat.edu.in", avatar: "RM" },
+      ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (password !== confirmPw) { setError("Passwords do not match."); return; }
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 400));
-    const result = register(name, email.trim(), password, roleConfig.key);
-    setLoading(false);
-    if (!result.ok) { setError(result.error ?? "Registration failed."); return; }
-    navigate({ to: `/${roleConfig.key}` });
+  const handleSelectAccount = async (email: string, name?: string) => {
+    setLoadingEmail(email);
+    await new Promise((r) => setTimeout(r, 450));
+    loginWithGoogle(role, email, name);
+    onSuccess(role);
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <div className="mb-6 flex items-center gap-3">
-        <button type="button" onClick={onBack} className="text-slate-400 hover:text-slate-600">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <h1 className="font-serif text-2xl font-bold text-slate-900">Create account</h1>
-          <p className="mt-0.5 text-sm text-slate-500">{roleConfig.label} registration</p>
-        </div>
-      </div>
-
-      {error && (
-        <div role="alert" className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span className="mt-0.5">⚠</span>
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Name */}
-      <div className="mb-4">
-        <label htmlFor={`${id}-name`} className="mb-1.5 block text-sm font-medium text-slate-700">Full name</label>
-        <input id={`${id}-name`} type="text" value={name} onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Aarav Patel" required
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-offset-0"
-        />
-      </div>
-
-      {/* Email */}
-      <div className="mb-4">
-        <label htmlFor={`${id}-reg-email`} className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-        <input id={`${id}-reg-email`} type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@charusat.edu.in" required
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-offset-0"
-        />
-      </div>
-
-      {/* Password */}
-      <div className="mb-4">
-        <label htmlFor={`${id}-reg-pw`} className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
-        <div className="relative">
-          <input id={`${id}-reg-pw`} type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder="Min. 6 characters" required
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-11 text-sm outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-offset-0"
-          />
-          <button type="button" onClick={() => setShowPw(v => !v)} aria-label="Toggle password"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-            {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 10 }}
+        className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl"
+      >
+        <div className="flex items-center justify-between pb-4 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <svg className="h-5 w-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+            </svg>
+            <span className="font-medium text-sm text-foreground">Sign in with Google</span>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
           </button>
         </div>
-      </div>
 
-      {/* Confirm Password */}
-      <div className="mb-6">
-        <label htmlFor={`${id}-confirm-pw`} className="mb-1.5 block text-sm font-medium text-slate-700">Confirm password</label>
-        <input id={`${id}-confirm-pw`} type={showPw ? "text" : "password"} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)}
-          placeholder="Re-enter password" required
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-offset-0"
-        />
-      </div>
+        <div className="py-4">
+          <p className="text-xs text-muted-foreground mb-3">Choose a Google account to continue to <strong>AI Tutor</strong></p>
 
-      <button type="submit" disabled={loading}
-        className={cn("flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-60", roleConfig.btnClass)}
-      >
-        {loading && <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
-        {loading ? "Creating account…" : "Create account"}
-      </button>
+          <div className="space-y-2">
+            {demoAccounts.map((acc) => (
+              <button
+                key={acc.email}
+                type="button"
+                disabled={loadingEmail !== null}
+                onClick={() => handleSelectAccount(acc.email, acc.name)}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-border bg-background/50 hover:bg-violet/10 hover:border-violet/30 transition text-left group disabled:opacity-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-full bg-violet/20 text-violet flex items-center justify-center text-xs font-bold ring-1 ring-violet/30">
+                    {acc.avatar}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-foreground group-hover:text-violet">{acc.name}</div>
+                    <div className="text-xs text-muted-foreground">{acc.email}</div>
+                  </div>
+                </div>
+                {loadingEmail === acc.email ? (
+                  <svg className="h-4 w-4 animate-spin text-violet" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : null}
+              </button>
+            ))}
+          </div>
 
-      <p className="mt-5 text-center text-sm text-slate-500">
-        Already have an account?{" "}
-        <button type="button" onClick={onBack} className={cn("font-medium transition hover:underline", roleConfig.accentClass)}>
-          Sign in
-        </button>
-      </p>
-    </form>
+          {!showCustom ? (
+            <button
+              type="button"
+              onClick={() => setShowCustom(true)}
+              className="mt-3 w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-violet hover:underline"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Use another Google account
+            </button>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (customEmail.trim()) handleSelectAccount(customEmail.trim(), customName.trim());
+              }}
+              className="mt-3 space-y-2 border-t border-border pt-3"
+            >
+              <input
+                type="email"
+                placeholder="Google Email (e.g. user@gmail.com)"
+                value={customEmail}
+                onChange={(e) => setCustomEmail(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-violet"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Full Name (optional)"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-violet"
+              />
+              <button
+                type="submit"
+                disabled={!customEmail.trim() || loadingEmail !== null}
+                className="w-full rounded-xl bg-violet py-2 text-xs font-semibold text-white hover:bg-violet-hover disabled:opacity-50"
+              >
+                Sign in with this account
+              </button>
+            </form>
+          )}
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
-// ─── Forgot Password Form ─────────────────────────────────────────────────────
+// ─── Forgot Password Form ────────────────────────────────────────────────────
 
 function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
   const { sendPasswordReset } = useAuth();
@@ -531,50 +682,63 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <button type="button" onClick={onBack} className="text-slate-400 hover:text-slate-600">
+        <button type="button" onClick={onBack} className="text-muted-foreground hover:text-foreground transition">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="font-serif text-2xl font-bold text-slate-900">Forgot password?</h1>
-          <p className="mt-0.5 text-sm text-slate-500">We'll send a reset link to your email.</p>
+          <h1 className="font-serif text-2xl font-bold text-foreground">Forgot password?</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">We'll send a reset link to your email.</p>
         </div>
       </div>
 
       {sent ? (
-        <div className="rounded-xl border border-green-200 bg-green-50 px-5 py-6 text-center">
+        <div className="rounded-xl border border-success/30 bg-success/8 px-5 py-6 text-center">
           <div className="text-2xl">📬</div>
-          <div className="mt-3 font-semibold text-slate-900">Reset link sent!</div>
-          <p className="mt-1 text-sm text-slate-500">Check your inbox at <strong>{email}</strong>.</p>
-          <p className="mt-1 text-xs text-slate-400">(Demo — no email is actually sent.)</p>
-          <button type="button" onClick={onBack} className="mt-5 text-sm font-medium text-indigo-brand hover:underline">
+          <div className="mt-3 font-semibold text-foreground">Reset link sent!</div>
+          <p className="mt-1 text-sm text-muted-foreground">Check your inbox at <strong>{email}</strong>.</p>
+          <p className="mt-1 text-xs text-muted-foreground">(Demo — no email is actually sent.)</p>
+          <button type="button" onClick={onBack} className="mt-5 text-sm font-medium text-violet hover:underline">
             Back to login
           </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} noValidate>
           {error && (
-            <div role="alert" className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/8 px-4 py-3 text-sm text-danger">
               <span>⚠</span><span>{error}</span>
             </div>
           )}
           <div className="mb-6">
-            <label htmlFor={`${id}-reset-email`} className="mb-1.5 block text-sm font-medium text-slate-700">
+            <label htmlFor={`${id}-reset-email`} className="mb-1.5 block text-sm font-medium text-foreground">
               Email address
             </label>
-            <input id={`${id}-reset-email`} type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@charusat.edu.in" required
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-300"
+            <input
+              id={`${id}-reset-email`}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@charusat.edu.in"
+              required
+              className="w-full rounded-xl border border-border bg-background/60 px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]"
             />
           </div>
-          <button type="submit" disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-brand py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-brand-hover disabled:opacity-60"
+          <motion.button
+            type="submit"
+            disabled={loading}
+            whileTap={{ scale: 0.97 }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9d72f7] to-[#7c3aed] py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60"
           >
-            {loading && <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
+            {loading && (
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
             {loading ? "Sending…" : "Send reset link"}
-          </button>
-          <p className="mt-4 text-center text-sm text-slate-500">
+          </motion.button>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
             Remembered it?{" "}
-            <button type="button" onClick={onBack} className="font-medium text-indigo-brand hover:underline">Back to login</button>
+            <button type="button" onClick={onBack} className="font-medium text-violet hover:underline">Back to login</button>
           </p>
         </form>
       )}

@@ -15,17 +15,17 @@ function Announcements() {
       <div className="space-y-4">
         {announcements.length === 0 ? (
           <Card>
-            <p className="text-center text-sm text-slate-500 py-8">No announcements posted yet.</p>
+            <p className="text-center text-sm text-muted-foreground py-8">No announcements posted yet.</p>
           </Card>
         ) : (
           announcements.map((a) => (
             <Card key={a.id}>
               <div className="flex items-start justify-between gap-4">
-                <div className="font-serif text-lg font-bold text-slate-900">{a.title}</div>
+                <div className="font-serif text-lg font-bold text-foreground">{a.title}</div>
                 <Pill tone="indigo">{a.scope}</Pill>
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{a.message}</p>
-              <div className="mt-3 text-xs text-slate-400">{a.createdAt} · Posted by <span className="font-medium text-slate-600">{a.postedBy}</span></div>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{a.message}</p>
+              <div className="mt-3 text-xs text-muted-foreground">{a.createdAt} · Posted by <span className="font-medium text-muted-foreground">{a.postedBy}</span></div>
             </Card>
           ))
         )}

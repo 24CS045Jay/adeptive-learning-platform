@@ -1,37 +1,376 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, ListChecks, TrendingDown } from "lucide-react";
-import { PageHeader, StatCard, ActionCard, Card, EmptyState, Pill } from "@/components/app-shell";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import {
+  MessageCircle, ListChecks, Flame, Play, Star,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  AreaChart, Area, BarChart, Bar, ResponsiveContainer,
+  XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine,
+} from "recharts";
+import { PageHeader, ActionCard, Card, Pill } from "@/components/app-shell";
 import { weakTopics } from "@/lib/mock-data";
+import { useAppData } from "@/lib/app-data-context";
+import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/student/")({
-  component: StudentDashboard,
-});
+export const Route = createFileRoute("/student/")(
+  { component: StudentDashboard }
+);
+
+const TIME_SPENT = [
+  { day: "Mon", hours: 1.5 },
+  { day: "Tue", hours: 2.2 },
+  { day: "Wed", hours: 0.8 },
+  { day: "Thu", hours: 3.1 },
+  { day: "Fri", hours: 2.5 },
+  { day: "Sat", hours: 1.0 },
+  { day: "Sun", hours: 1.8 },
+];
+
+const AVG_HOURS = +(TIME_SPENT.reduce((a, d) => a + d.hours, 0) / TIME_SPENT.length).toFixed(1);
+
+const STREAK_DAYS = [
+  { day: "M", active: 1 },
+  { day: "T", active: 1 },
+  { day: "W", active: 0 },
+  { day: "T", active: 1 },
+  { day: "F", active: 1 },
+  { day: "S", active: 1 },
+  { day: "S", active: 1 },
+];
+
+const MASTERY_PCT = 74;
+const WEEKLY_PROGRESS_PCT = 85;
+
+/* ── Animated Mastery Ring ── */
+function MasteryRing({ pct }: { pct: number }) {
+  const outerR = 56;
+  const innerR = 46; // secondary ring
+  const circ = 2 * Math.PI * outerR;
+  const innerCirc = 2 * Math.PI * innerR;
+
+  const [displayed, setDisplayed] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const startRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const duration = 950;
+    const run = (ts: number) => {
+      if (!startRef.current) startRef.current = ts;
+      const p = Math.min((ts - startRef.current) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplayed(Math.round(eased * pct));
+      if (p < 1) rafRef.current = requestAnimationFrame(run);
+    };
+    rafRef.current = requestAnimationFrame(run);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [pct]);
+
+  const outerDash = `${(displayed / 100) * circ} ${circ}`;
+  const innerDash  = `${(WEEKLY_PROGRESS_PCT / 100) * innerCirc} ${innerCirc}`;
+
+  return (
+    <div className="relative flex h-40 w-40 items-center justify-center">
+      <svg className="absolute inset-0 -rotate-90" viewBox="0 0 128 128" width="160" height="160">
+        {/* Track rings */}
+        <circle cx="64" cy="64" r={outerR} fill="none" stroke="var(--color-border)" strokeWidth="10" />
+        <circle cx="64" cy="64" r={innerR} fill="none" stroke="var(--color-border)" strokeWidth="5" />
+        {/* Weekly progress ring (gold, inner) */}
+        <circle
+          cx="64" cy="64" r={innerR}
+          fill="none"
+          stroke="#f5c451"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeDasharray={innerDash}
+          className="ring-glow-gold"
+          style={{ transition: "stroke-dasharray 0.03s linear" }}
+        />
+        {/* Mastery ring (violet, outer) */}
+        <circle
+          cx="64" cy="64" r={outerR}
+          fill="none"
+          stroke="#8b5cf6"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={outerDash}
+          className="ring-glow-violet"
+          style={{ transition: "stroke-dasharray 0.03s linear" }}
+        />
+      </svg>
+      <div className="relative text-center">
+        <div className="text-gradient-violet text-3xl font-bold tabular-nums">{displayed}%</div>
+        <div className="text-[11px] text-muted-foreground mt-0.5">Mastery</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Streak Flame floating ── */
+function StreakFlame() {
+  return (
+    <div className="relative flex items-center gap-1">
+      <span className="flame-float text-xl">🔥</span>
+      <motion.span
+        animate={{ y: [0, -3, 0] }}
+        transition={{ duration: 1.8, repeat: Infinity, delay: 0.3 }}
+        className="text-sm opacity-60"
+      >
+        🔥
+      </motion.span>
+      <motion.span
+        animate={{ y: [0, -2, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity, delay: 0.6 }}
+        className="text-xs opacity-40"
+      >
+        🔥
+      </motion.span>
+    </div>
+  );
+}
+
+/* ── Upcoming Quizzes ── */
+function UpcomingQuizzes({ subjects }: { subjects: any[] }) {
+  const SUBJECT_ICONS: Record<string, string> = {
+    "Big Data Analytics": "📊",
+    "Machine Learning": "🤖",
+    "Cloud Computing": "☁️",
+    "Cybersecurity": "🔒",
+  };
+
+  const upcoming = subjects.slice(0, 4).map((s, i) => ({
+    id: s.id,
+    title: `${s.name} Unit ${i + 1} Assessment`,
+    subject: s.name,
+    due: i === 0 ? "Due Today" : i === 1 ? "Due Tomorrow" : `Due in ${i + 2} days`,
+    urgency: i === 0 ? "urgent" : i === 1 ? "soon" : "normal",
+    icon: SUBJECT_ICONS[s.name] ?? "📚",
+  }));
+
+  return (
+    <Card title="Upcoming Quizzes">
+      <ul className="space-y-2">
+        {upcoming.map((q, i) => (
+          <motion.li
+            key={q.id}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.07, duration: 0.2 }}
+            className={cn(
+              "flex items-center gap-3 rounded-xl border p-3 transition",
+              q.urgency === "urgent" ? "quiz-urgent" :
+              q.urgency === "soon"   ? "quiz-soon"   :
+              "border-border bg-background hover:bg-accent/30"
+            )}
+          >
+            <span className="text-xl">{q.icon}</span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium text-foreground">{q.title}</div>
+              <div className={cn(
+                "text-[11px] font-semibold",
+                q.urgency === "urgent" ? "text-danger" :
+                q.urgency === "soon"   ? "text-gold"   :
+                "text-muted-foreground"
+              )}>
+                {q.due}
+              </div>
+            </div>
+            <Link to="/student/quizzes">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                type="button"
+                className="flex items-center gap-1 rounded-lg bg-violet/10 px-2.5 py-1 text-xs font-semibold text-violet transition hover:bg-violet/20"
+              >
+                <Play className="h-3 w-3" /> Start
+              </motion.button>
+            </Link>
+          </motion.li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+/* ── Chart Tooltip ── */
+function ChartTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-xl"
+      style={{ boxShadow: "0 8px 24px -6px rgba(0,0,0,0.25), 0 0 0 1px var(--color-border)" }}>
+      {label && <div className="font-bold text-foreground mb-1">{label}</div>}
+      {payload.map((p: any) => (
+        <div key={p.dataKey} className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
+          <span className="text-muted-foreground">{p.name ?? p.dataKey}:</span>
+          <span className="font-semibold text-foreground">{p.value}{p.name === "Hours" ? "h" : ""}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Animated pulse dot for latest chart point ── */
+function PulseChartDot(props: any) {
+  const { cx, cy, index, dataLength } = props;
+  if (index !== dataLength - 1) return null;
+  return (
+    <g>
+      <motion.circle
+        cx={cx} cy={cy} r={6}
+        fill="#8b5cf6"
+        stroke="var(--color-card)"
+        strokeWidth={2}
+        animate={{ r: [5, 8, 5], opacity: [1, 0.4, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+    </g>
+  );
+}
 
 function StudentDashboard() {
+  const { subjects } = useAppData();
+
+  const axisStyle = { fontSize: 11, fill: "var(--color-muted-foreground)" };
+
   return (
     <div>
       <PageHeader title="Your Learning Dashboard" subtitle="Personalized progress across all subjects." />
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <StatCard label="Questions Asked" value={42} color="indigo" />
-        <StatCard label="Quiz Attempts" value={8} color="amber" />
-        <StatCard label="Quiz Accuracy" value="74%" color="green" />
-        <StatCard label="Weak Topics" value={weakTopics.length} color="teal" />
+
+      {/* ── Row 1: Mastery Hero, Streak, Quick Actions ── */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Mastery Hero Card */}
+        <Card variant="hero" className="flex flex-col items-center justify-center gap-4 py-8">
+          <MasteryRing pct={MASTERY_PCT} />
+          <div className="text-center">
+            <div className="font-serif text-base font-bold text-foreground">Overall Mastery</div>
+            <div className="text-xs text-muted-foreground">Across all enrolled subjects</div>
+            <div className="mt-2 flex items-center justify-center gap-1 text-xs font-semibold text-success">
+              <Star className="h-3.5 w-3.5 fill-success" />
+              Top 30% of your class
+            </div>
+            {/* Weekly progress legend */}
+            <div className="mt-3 flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-violet" />
+                Overall {MASTERY_PCT}%
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-gold" />
+                Weekly {WEEKLY_PROGRESS_PCT}%
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Streak Card */}
+        <Card variant="hero-gold" className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold/15 ring-1 ring-gold/25 shadow-[0_0_14px_-3px_oklch(0.82_0.18_84_/_40%)]">
+              <Flame className="h-6 w-6 text-gold" />
+            </div>
+            <div>
+              <div className="text-gradient-gold font-serif text-2xl font-bold">6 Day Streak</div>
+              <div className="text-xs text-muted-foreground">Best: 14 days · Keep going!</div>
+            </div>
+          </div>
+          <StreakFlame />
+          <div className="h-20 mt-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={STREAK_DAYS} barSize={14}>
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} />
+                <Bar
+                  dataKey="active"
+                  radius={[5, 5, 0, 0]}
+                  isAnimationActive
+                  animationDuration={700}
+                >
+                  {STREAK_DAYS.map((d, i) => (
+                    <motion.rect key={i} />
+                  ))}
+                  {STREAK_DAYS.map((d, i) => (
+                    // Use Cell equivalent via custom fill
+                    <></>
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="flex flex-col gap-3">
+          <Link to="/student/ask">
+            <ActionCard icon={MessageCircle} title="Ask the AI Tutor" description="Get grounded answers from your course material." color="indigo" />
+          </Link>
+          <Link to="/student/quizzes">
+            <ActionCard icon={ListChecks} title="Take a Quiz" description="Self-assess and build your mastery score." color="amber" />
+          </Link>
+        </div>
       </div>
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <ActionCard icon={MessageCircle} title="Ask the AI Tutor" description="Get grounded answers from your course material." color="indigo" />
-        <ActionCard icon={ListChecks} title="Take a Quiz" description="Self-assess and build your mastery score." color="amber" />
+
+      {/* ── Row 2: Time Chart, Upcoming Quizzes ── */}
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Card title="Time Spent This Week">
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={TIME_SPENT}>
+                <defs>
+                  <linearGradient id="timeGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#8b5cf6" stopOpacity={0.55} />
+                    <stop offset="55%"  stopColor="#8b5cf6" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="day" tick={axisStyle} axisLine={false} tickLine={false} />
+                <YAxis tick={axisStyle} axisLine={false} tickLine={false} unit="h" />
+                <Tooltip content={<ChartTooltip />} />
+                {/* Average reference line */}
+                <ReferenceLine
+                  y={AVG_HOURS}
+                  stroke="var(--color-muted-foreground)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.5}
+                  label={{ value: `Avg ${AVG_HOURS}h`, fill: "var(--color-muted-foreground)", fontSize: 10, position: "right" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="hours"
+                  stroke="#8b5cf6"
+                  strokeWidth={2.5}
+                  fill="url(#timeGrad)"
+                  name="Hours"
+                  isAnimationActive
+                  animationDuration={900}
+                  dot={false}
+                  activeDot={{ r: 5, fill: "#8b5cf6", stroke: "var(--color-card)", strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <UpcomingQuizzes subjects={subjects} />
       </div>
-      <div className="mt-6">
-        <Card title="Weak Topics — Suggested Revision" action={<TrendingDown className="h-5 w-5 text-red-brand" />}>
+
+      {/* ── Row 3: Weak Topics ── */}
+      <div className="mt-4">
+        <Card title="Weak Topics — Suggested Revision">
           {weakTopics.length === 0 ? (
-            <EmptyState icon={TrendingDown} title="No weak topics detected yet" description="Take a few quizzes to build your personalized revision plan." />
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              Take a few quizzes to build your personalized revision plan.
+            </div>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-border">
               {weakTopics.map((w) => (
-                <li key={w.topic} className="flex items-center justify-between py-3">
+                <li key={w.topic} className="flex items-center justify-between py-3 transition hover:bg-accent/30 rounded-lg px-2">
                   <div>
-                    <div className="font-medium text-slate-900">{w.topic}</div>
-                    <div className="text-xs text-slate-500">{w.reason}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-foreground">{w.topic}</div>
+                      <span className="rounded-full bg-violet/10 px-1.5 py-0.5 text-[10px] font-bold text-violet">AI Generated</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{w.reason}</div>
                   </div>
                   <Pill tone="indigo">{w.subject}</Pill>
                 </li>

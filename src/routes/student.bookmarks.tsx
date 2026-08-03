@@ -78,7 +78,7 @@ function Bookmarks() {
           <button
             type="button"
             onClick={handleExportNotebook}
-            className="flex items-center gap-2 rounded-xl bg-indigo-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-brand-hover shadow-sm transition"
+            className="flex items-center gap-2 rounded-xl bg-violet px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-hover shadow-sm transition"
           >
             <Download className="h-4 w-4" /> Export Notebook (Markdown)
           </button>
@@ -86,7 +86,7 @@ function Bookmarks() {
       />
 
       {exportBanner && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-6 py-4 text-sm text-green-700 font-medium">
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-success/5 px-6 py-4 text-sm text-success font-medium">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           Study Notebook exported as Markdown! File saved to your downloads.
         </div>
@@ -94,7 +94,7 @@ function Bookmarks() {
 
       {/* Filter Chips */}
       <div className="mb-6 flex items-center gap-2">
-        <span className="text-xs text-slate-400 font-medium">Filter Subject:</span>
+        <span className="text-xs text-muted-foreground font-medium">Filter Subject:</span>
         {["all", "Big Data Analytics", "Machine Learning"].map((s) => (
           <button
             key={s}
@@ -103,8 +103,8 @@ function Bookmarks() {
             className={cn(
               "rounded-full px-3.5 py-1 text-xs font-semibold capitalize transition",
               selectedSubject === s
-                ? "bg-indigo-brand text-white"
-                : "bg-white text-slate-600 border border-slate-200 hover:border-indigo-brand/40"
+                ? "bg-violet text-white"
+                : "bg-card text-muted-foreground border border-border hover:border-violet/40"
             )}
           >
             {s}
@@ -117,33 +117,33 @@ function Bookmarks() {
           <Card key={b.id} className="flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-2">
-                <div className="font-serif text-base font-bold text-slate-900 leading-snug">
+                <div className="font-serif text-base font-bold text-foreground leading-snug">
                   {b.question}
                 </div>
                 <Pill tone="indigo">{b.subject}</Pill>
               </div>
 
-              <p className="text-xs leading-relaxed text-slate-700 font-sans bg-slate-50 p-3 rounded-xl">
+              <p className="text-xs leading-relaxed text-foreground font-sans bg-accent/40 p-3 rounded-xl">
                 {b.answer}
               </p>
 
               {b.notes && (
-                <div className="rounded-xl border border-indigo-brand/20 bg-indigo-brand/5 p-3 text-xs text-indigo-brand space-y-1">
+                <div className="rounded-xl border border-violet/20 bg-indigo-brand/5 p-3 text-xs text-violet space-y-1">
                   <div className="font-bold flex items-center gap-1">
                     <Edit3 className="h-3.5 w-3.5" /> Personal Note:
                   </div>
-                  <p className="text-slate-700 font-sans">{b.notes}</p>
+                  <p className="text-foreground font-sans">{b.notes}</p>
                 </div>
               )}
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
               <span>Saved {b.date}</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setEditingItem(b); setNoteText(b.notes ?? ""); }}
-                  className="flex items-center gap-1 font-semibold text-indigo-brand hover:underline"
+                  className="flex items-center gap-1 font-semibold text-violet hover:underline"
                 >
                   <Edit3 className="h-3.5 w-3.5" /> {b.notes ? "Edit Note" : "Add Note"}
                 </button>
@@ -164,28 +164,28 @@ function Bookmarks() {
       {/* Edit Note Modal */}
       {editingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="font-serif text-lg font-bold text-slate-900">
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="font-serif text-lg font-bold text-foreground">
                 Add Personal Note
               </div>
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-foreground hover:text-muted-foreground"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs font-semibold text-slate-700">{editingItem.question}</div>
+              <div className="text-xs font-semibold text-foreground">{editingItem.question}</div>
               <textarea
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
                 placeholder="Write your custom notes, mnemonic devices, or exam reminders..."
                 rows={4}
-                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none focus:border-indigo-brand"
+                className="w-full rounded-xl border border-border bg-card p-3 text-xs outline-none focus:border-violet"
               />
             </div>
 
@@ -193,14 +193,14 @@ function Bookmarks() {
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent/40"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveNote}
-                className="rounded-xl bg-indigo-brand px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-brand-hover"
+                className="rounded-xl bg-violet px-5 py-2 text-xs font-semibold text-white hover:bg-violet-hover"
               >
                 Save Note
               </button>

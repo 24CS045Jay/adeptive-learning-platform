@@ -51,17 +51,17 @@ export function DocumentViewerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
-      <div className="w-full max-w-4xl h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden">
+      <div className="w-full max-w-4xl h-[90vh] flex flex-col rounded-2xl bg-card shadow-2xl overflow-hidden">
 
         {/* Top Control Bar */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-3.5 bg-slate-900 text-white">
+        <div className="flex items-center justify-between border-b border-border px-6 py-3.5 bg-slate-900 text-white">
           <div className="flex items-center gap-3 min-w-0">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400 font-bold">
               {fileType === "pdf" ? <FileText className="h-5 w-5" /> : fileType === "pptx" ? <Presentation className="h-5 w-5" /> : <FileType2 className="h-5 w-5" />}
             </span>
             <div className="min-w-0">
               <div className="font-serif text-base font-bold truncate">{docName}</div>
-              <div className="text-xs text-slate-400 truncate">
+              <div className="text-xs text-muted-foreground truncate">
                 {subjectName} · {uploadedBy} · {uploadDate}
               </div>
             </div>
@@ -76,7 +76,7 @@ export function DocumentViewerModal({
                 type="button"
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="text-slate-400 hover:text-white disabled:opacity-30"
+                className="text-muted-foreground hover:text-white disabled:opacity-30"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -85,14 +85,14 @@ export function DocumentViewerModal({
                 type="button"
                 disabled={currentPage >= pages.length}
                 onClick={() => setCurrentPage((p) => Math.min(pages.length, p + 1))}
-                className="text-slate-400 hover:text-white disabled:opacity-30"
+                className="text-muted-foreground hover:text-white disabled:opacity-30"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
 
             {/* Zoom Controls */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <button
                 type="button"
                 onClick={() => setZoom((z) => Math.max(75, z - 15))}
@@ -115,7 +115,7 @@ export function DocumentViewerModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg bg-slate-800 p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white transition"
+              className="rounded-lg bg-slate-800 p-1.5 text-muted-foreground hover:bg-slate-700 hover:text-white transition"
               title="Close viewer"
             >
               <X className="h-5 w-5" />
@@ -124,14 +124,14 @@ export function DocumentViewerModal({
         </div>
 
         {/* Document Page Reader Canvas */}
-        <div className="flex-1 bg-slate-100 p-6 overflow-auto flex justify-center items-start">
+        <div className="flex-1 bg-muted p-6 overflow-auto flex justify-center items-start">
           <div
             style={{ width: `${zoom}%` }}
-            className="w-full max-w-3xl min-h-[600px] rounded-xl bg-white p-10 shadow-lg border border-slate-200 transition-all font-serif text-slate-800 leading-relaxed whitespace-pre-line space-y-4"
+            className="w-full max-w-3xl min-h-[600px] rounded-xl bg-card p-10 shadow-lg border border-border transition-all font-serif text-foreground leading-relaxed whitespace-pre-line space-y-4"
           >
             {/* Watermark header */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4 text-xs font-sans text-slate-400">
-              <span className="font-semibold uppercase tracking-wider text-indigo-brand">
+            <div className="flex items-center justify-between border-b border-border pb-4 mb-4 text-xs font-sans text-muted-foreground">
+              <span className="font-semibold uppercase tracking-wider text-violet">
                 CHARUSAT CSE · Official Course Document
               </span>
               <span>{fileType.toUpperCase()} Format</span>
@@ -143,7 +143,7 @@ export function DocumentViewerModal({
             </div>
 
             {/* Simulated Page Footer */}
-            <div className="pt-8 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-sans">
+            <div className="pt-8 border-t border-border flex items-center justify-between text-xs text-muted-foreground font-sans">
               <span>Verified for AI Tutor Vector Store</span>
               <span>Page {currentPage}</span>
             </div>
@@ -151,8 +151,8 @@ export function DocumentViewerModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-white">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+        <div className="flex items-center justify-between border-t border-border px-6 py-3.5 bg-card">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-green-600" />
             Extracted text chunks verified & synced with RAG pipeline.
           </div>

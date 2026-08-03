@@ -25,22 +25,22 @@ export function PassageWorkbenchModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden">
+      <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-card shadow-2xl overflow-hidden">
 
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-accent/40">
           <div>
-            <div className="flex items-center gap-2 font-serif text-lg font-bold text-slate-900">
-              <Layers className="h-5 w-5 text-indigo-brand" /> Passage Inspection & Reranking Workbench
+            <div className="flex items-center gap-2 font-serif text-lg font-bold text-foreground">
+              <Layers className="h-5 w-5 text-violet" /> Passage Inspection & Reranking Workbench
             </div>
-            <div className="mt-0.5 text-xs text-slate-500">
-              Document: <span className="font-semibold text-slate-800">{docName}</span> · {docChunks.length} multi-modal chunks indexed
+            <div className="mt-0.5 text-xs text-muted-foreground">
+              Document: <span className="font-semibold text-foreground">{docName}</span> · {docChunks.length} multi-modal chunks indexed
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-slate-200 hover:text-foreground"
           >
             <X className="h-5 w-5" />
           </button>
@@ -51,8 +51,8 @@ export function PassageWorkbenchModal({
           {docChunks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Layers className="h-10 w-10 text-slate-300 mb-2" />
-              <div className="font-semibold text-slate-700">No multi-modal chunks extracted yet</div>
-              <p className="mt-1 text-xs text-slate-400 max-w-sm">
+              <div className="font-semibold text-foreground">No multi-modal chunks extracted yet</div>
+              <p className="mt-1 text-xs text-muted-foreground max-w-sm">
                 Passages and visual artifacts will be indexed automatically when processed by the vector pipeline.
               </p>
             </div>
@@ -64,24 +64,24 @@ export function PassageWorkbenchModal({
                   "rounded-2xl border p-5 transition-all space-y-3",
                   c.status === "deprecated"
                     ? "border-red-200 bg-red-50/40 opacity-75"
-                    : "border-slate-200 bg-white shadow-xs"
+                    : "border-border bg-card shadow-xs"
                 )}
               >
                 {/* Top Row: Chunk #, Unit/Page, Status, Star Rating */}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-brand/10 text-xs font-bold text-indigo-brand">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-brand/10 text-xs font-bold text-violet">
                       #{i + 1}
                     </span>
-                    <span className="font-semibold text-slate-800">{c.unit}</span>
-                    <span className="text-slate-400">·</span>
-                    <span className="text-slate-500">Page/Slide {c.pageOrSlide}</span>
+                    <span className="font-semibold text-foreground">{c.unit}</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground">Page/Slide {c.pageOrSlide}</span>
                   </div>
 
                   <div className="flex items-center gap-4">
                     {/* Star Weight Reranking */}
                     <div className="flex items-center gap-1">
-                      <span className="text-[11px] font-semibold text-slate-400 mr-1">Rerank Weight:</span>
+                      <span className="text-[11px] font-semibold text-muted-foreground mr-1">Rerank Weight:</span>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
@@ -115,24 +115,24 @@ export function PassageWorkbenchModal({
                 </div>
 
                 {/* Text Content */}
-                <p className="text-sm leading-relaxed text-slate-800 font-sans">
+                <p className="text-sm leading-relaxed text-foreground font-sans">
                   "{c.text}"
                 </p>
 
                 {/* Extracted Visual Artifact Thumbnail */}
                 {c.artifact && (
-                  <div className="rounded-xl border border-indigo-brand/20 bg-indigo-brand/5 p-3.5 flex items-start gap-3">
+                  <div className="rounded-xl border border-violet/20 bg-indigo-brand/5 p-3.5 flex items-start gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-brand text-white font-bold">
                       <ImageIcon className="h-5 w-5" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-serif text-sm font-bold text-slate-900">{c.artifact.title}</span>
-                        <span className="rounded bg-indigo-brand/15 px-2 py-0.5 text-[10px] font-bold text-indigo-brand">
+                        <span className="font-serif text-sm font-bold text-foreground">{c.artifact.title}</span>
+                        <span className="rounded bg-indigo-brand/15 px-2 py-0.5 text-[10px] font-bold text-violet">
                           {c.artifact.badge}
                         </span>
                       </div>
-                      <div className="mt-1 text-xs text-slate-600 italic">
+                      <div className="mt-1 text-xs text-muted-foreground italic">
                         {c.artifact.caption}
                       </div>
                     </div>
@@ -144,8 +144,8 @@ export function PassageWorkbenchModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4 bg-slate-50">
-          <div className="text-xs text-slate-500">
+        <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-accent/40">
+          <div className="text-xs text-muted-foreground">
             Changes to weights and status are updated in real-time in the vector reranker.
           </div>
           <button

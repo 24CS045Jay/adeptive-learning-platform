@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Download, FileText, CheckCircle2, ShieldCheck, Printer, Filter, Sparkles } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, Pill } from "@/components/app-shell";
 import { useAppData } from "@/lib/app-data-context";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/reports")({
   component: Reports,
@@ -66,14 +67,14 @@ function Reports() {
       />
 
       {downloadSuccess && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-6 py-4 text-sm text-green-700 font-medium">
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-success/5 px-6 py-4 text-sm text-success font-medium">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           Institutional report exported successfully! File saved to your downloads.
         </div>
       )}
 
       {/* Report Type Selector Tabs */}
-      <div className="mb-6 flex border-b border-slate-200 bg-white px-6 rounded-2xl shadow-xs">
+      <div className="mb-6 flex border-b border-border bg-card px-6 rounded-2xl shadow-xs">
         {[
           { id: "student_mastery", label: "Student Performance & Mastery Report" },
           { id: "faculty_coverage", label: "Faculty Document Coverage & Approvals" },
@@ -86,8 +87,8 @@ function Reports() {
             className={cn(
               "border-b-2 px-5 py-4 text-sm font-medium transition",
               activeReportType === tab.id
-                ? "border-indigo-brand text-indigo-brand font-bold"
-                : "border-transparent text-slate-500 hover:text-slate-800"
+                ? "border-violet text-violet font-bold"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
             {tab.label}
@@ -97,7 +98,7 @@ function Reports() {
 
       <Card>
         <div className="mb-4 flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Generated Summary Table · {new Date().toLocaleDateString()}
           </div>
           <div className="flex items-center gap-2">
@@ -108,7 +109,7 @@ function Reports() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="pb-3 pr-4">Subject</th>
                 <th className="pb-3 pr-4">Code</th>
                 <th className="pb-3 pr-4">Faculty Lead</th>
@@ -121,14 +122,14 @@ function Reports() {
             </thead>
             <tbody>
               {reportRows.map((r) => (
-                <tr key={r.code} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="py-3 pr-4 font-bold text-slate-900">{r.subjectName}</td>
-                  <td className="py-3 pr-4 text-slate-600 font-mono text-xs">{r.code}</td>
-                  <td className="py-3 pr-4 text-slate-700">{r.faculty}</td>
-                  <td className="py-3 pr-4 text-slate-700 font-semibold">{r.approvedDocs} Docs</td>
-                  <td className="py-3 pr-4 text-slate-600">{r.studentCount} Students</td>
-                  <td className="py-3 pr-4 text-indigo-brand font-semibold">{r.queriesCount}</td>
-                  <td className="py-3 pr-4 text-green-700 font-bold">{r.masteryPct}%</td>
+                <tr key={r.code} className="border-t border-border hover:bg-accent/40">
+                  <td className="py-3 pr-4 font-bold text-foreground">{r.subjectName}</td>
+                  <td className="py-3 pr-4 text-muted-foreground font-mono text-xs">{r.code}</td>
+                  <td className="py-3 pr-4 text-foreground">{r.faculty}</td>
+                  <td className="py-3 pr-4 text-foreground font-semibold">{r.approvedDocs} Docs</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{r.studentCount} Students</td>
+                  <td className="py-3 pr-4 text-violet font-semibold">{r.queriesCount}</td>
+                  <td className="py-3 pr-4 text-success font-bold">{r.masteryPct}%</td>
                   <td className="py-3"><Pill tone="green">{r.complianceStatus}</Pill></td>
                 </tr>
               ))}

@@ -42,7 +42,7 @@ function AdminAnnouncements() {
 
       <Card title="Post an announcement">
         {posted && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-200 bg-success/5 px-4 py-3 text-sm text-success">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             Announcement broadcasted successfully to all users!
           </div>
@@ -50,22 +50,22 @@ function AdminAnnouncements() {
 
         <form onSubmit={handleSubmit} className="grid gap-4 md:max-w-2xl">
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">Title</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Mid-semester Examination Schedule"
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-brand"
+              className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-violet"
               required
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">Target Scope</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Target Scope</label>
             <select
               value={scope}
               onChange={(e) => setScope(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-brand font-medium"
+              className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-violet font-medium"
             >
               <option value="Institution">Institution-wide (All Students & Faculty)</option>
               <option value="Big Data Analytics">Big Data Analytics (CSE501)</option>
@@ -75,13 +75,13 @@ function AdminAnnouncements() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">Message Content</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Message Content</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Write announcement details here..."
               rows={4}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-brand"
+              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-violet"
               required
             />
           </div>
@@ -100,10 +100,10 @@ function AdminAnnouncements() {
           <Card key={a.id}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="font-serif text-lg font-bold text-slate-900">{a.title}</div>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{a.message}</p>
-                <div className="mt-3 text-xs text-slate-400">
-                  {a.createdAt} · Posted by <span className="font-medium text-slate-600">{a.postedBy}</span>
+                <div className="font-serif text-lg font-bold text-foreground">{a.title}</div>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{a.message}</p>
+                <div className="mt-3 text-xs text-muted-foreground">
+                  {a.createdAt} · Posted by <span className="font-medium text-muted-foreground">{a.postedBy}</span>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-3">

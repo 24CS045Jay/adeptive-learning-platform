@@ -61,7 +61,7 @@ function AuditLogsPage() {
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-2 rounded-xl bg-indigo-brand px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-brand-hover shadow-sm transition"
+            className="flex items-center gap-2 rounded-xl bg-violet px-4 py-2 text-sm font-semibold text-white hover:bg-violet-hover shadow-sm transition"
           >
             <Download className="h-4 w-4" /> Export Audit Log (CSV)
           </button>
@@ -69,26 +69,26 @@ function AuditLogsPage() {
       />
 
       {exportedBanner && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-6 py-4 text-sm text-green-700 font-medium">
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-success/5 px-6 py-4 text-sm text-success font-medium">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           Audit log CSV exported successfully!
         </div>
       )}
 
       {/* Filter Bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div className="flex items-center gap-2 flex-1 min-w-[240px]">
-          <Search className="h-4 w-4 text-slate-400" />
+          <Search className="h-4 w-4 text-muted-foreground" />
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by actor email, action code, or JSON payload..."
-            className="w-full text-sm outline-none placeholder:text-slate-400"
+            className="w-full text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-400 font-medium">Actor Role:</span>
+          <span className="text-muted-foreground font-medium">Actor Role:</span>
           {["all", "admin", "faculty", "student"].map((r) => (
             <button
               key={r}
@@ -97,8 +97,8 @@ function AuditLogsPage() {
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-semibold capitalize transition",
                 roleFilter === r
-                  ? "bg-indigo-brand text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-violet text-white"
+                  : "bg-muted text-muted-foreground hover:bg-slate-200"
               )}
             >
               {r}
@@ -111,7 +111,7 @@ function AuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="pb-3 pr-4">Timestamp</th>
                 <th className="pb-3 pr-4">Actor Email</th>
                 <th className="pb-3 pr-4">Action Event</th>
@@ -120,18 +120,18 @@ function AuditLogsPage() {
             </thead>
             <tbody>
               {filtered.map((l) => (
-                <tr key={l.id} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="py-3 pr-4 text-xs font-mono text-slate-500 whitespace-nowrap">{l.time}</td>
-                  <td className="py-3 pr-4 font-semibold text-slate-800 whitespace-nowrap">{l.actor}</td>
+                <tr key={l.id} className="border-t border-border hover:bg-accent/40">
+                  <td className="py-3 pr-4 text-xs font-mono text-muted-foreground whitespace-nowrap">{l.time}</td>
+                  <td className="py-3 pr-4 font-semibold text-foreground whitespace-nowrap">{l.actor}</td>
                   <td className="py-3 pr-4">
                     <Pill tone={actionTone(l.action)}>{l.action}</Pill>
                   </td>
-                  <td className="py-3 font-mono text-xs text-slate-600 truncate max-w-xs">{l.details}</td>
+                  <td className="py-3 font-mono text-xs text-muted-foreground truncate max-w-xs">{l.details}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-sm text-slate-400">
+                  <td colSpan={4} className="py-12 text-center text-sm text-muted-foreground">
                     No audit logs match the current filters.
                   </td>
                 </tr>

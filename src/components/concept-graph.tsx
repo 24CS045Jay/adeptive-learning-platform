@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 const MASTERY_COLORS: Record<ConceptNode["mastery"], { bg: string; text: string; label: string }> = {
   mastered: { bg: "bg-green-brand/10", text: "text-green-700", label: "Mastered ✓" },
   weak:     { bg: "bg-amber-brand/15", text: "text-amber-700", label: "Needs Revision ⚡" },
-  unread:   { bg: "bg-slate-100",      text: "text-slate-600", label: "Unread 📖" },
+  unread:   { bg: "bg-muted",      text: "text-muted-foreground", label: "Unread 📖" },
 };
 
 const DOMAIN_COLORS: Record<string, string> = {
@@ -58,11 +58,11 @@ export function ConceptGraphView() {
         subtitle="Visual relationship map connecting CSE topics across subjects, prerequisite dependencies, and mastery status."
         action={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 font-medium">Filter Subject:</span>
+            <span className="text-xs text-muted-foreground font-medium">Filter Subject:</span>
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-brand font-medium"
+              className="rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-violet font-medium"
             >
               <option value="all">All Subjects (Platform Graph)</option>
               {subjects.map((s) => (
@@ -79,8 +79,8 @@ export function ConceptGraphView() {
           <Card className="overflow-hidden">
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Network className="h-5 w-5 text-indigo-brand" />
-                <span className="font-serif text-lg font-bold text-slate-900">
+                <Network className="h-5 w-5 text-violet" />
+                <span className="font-serif text-lg font-bold text-foreground">
                   Concept Network Graph
                 </span>
               </div>
@@ -92,7 +92,7 @@ export function ConceptGraphView() {
             </div>
 
             {/* SVG Visual Canvas */}
-            <div className="relative rounded-xl border border-slate-100 bg-slate-50/50 p-4 min-h-[460px] flex items-center justify-center">
+            <div className="relative rounded-xl border border-border bg-accent/40/50 p-4 min-h-[460px] flex items-center justify-center">
               <svg width="100%" height="440" viewBox="0 0 800 560" className="w-full h-auto">
                 <defs>
                   <marker
@@ -230,22 +230,22 @@ export function ConceptGraphView() {
                       {MASTERY_COLORS[selectedNode.mastery].label}
                     </span>
                   </div>
-                  <div className="mt-3 font-serif text-xl font-bold text-slate-900">
+                  <div className="mt-3 font-serif text-xl font-bold text-foreground">
                     {selectedNode.label}
                   </div>
-                  <div className="mt-1 text-xs text-indigo-brand font-medium">
+                  <div className="mt-1 text-xs text-violet font-medium">
                     {selectedNode.subjectName}
                   </div>
                 </div>
 
                 {/* Concept Summary */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-700 leading-relaxed">
+                <div className="rounded-xl border border-border bg-accent/40 p-3 text-xs text-foreground leading-relaxed">
                   {selectedNode.summary}
                 </div>
 
                 {/* Connected Concepts */}
                 <div>
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Graph Relationships ({connectedEdges.length})
                   </div>
                   <div className="space-y-2">
@@ -254,15 +254,15 @@ export function ConceptGraphView() {
                       const otherId = isSource ? e.target : e.source;
                       const otherNode = conceptNodes.find((n) => n.id === otherId);
                       return (
-                        <div key={e.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-2.5 text-xs">
+                        <div key={e.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-2.5 text-xs">
                           <div>
-                            <span className="text-slate-400 font-medium">{isSource ? `→ ${e.label}: ` : `← ${e.label} by: `}</span>
-                            <span className="font-bold text-slate-800">{otherNode?.label}</span>
+                            <span className="text-muted-foreground font-medium">{isSource ? `→ ${e.label}: ` : `← ${e.label} by: `}</span>
+                            <span className="font-bold text-foreground">{otherNode?.label}</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => setSelectedNodeId(otherId)}
-                            className="text-xs text-indigo-brand hover:underline font-medium"
+                            className="text-xs text-violet hover:underline font-medium"
                           >
                             view
                           </button>
@@ -274,13 +274,13 @@ export function ConceptGraphView() {
 
                 {/* Related Course Materials */}
                 <div>
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Related Course Documents
                   </div>
                   <div className="space-y-1.5">
                     {selectedNode.relatedDocNames.map((dName) => (
-                      <div key={dName} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
-                        <FileText className="h-3.5 w-3.5 text-indigo-brand shrink-0" />
+                      <div key={dName} className="flex items-center gap-2 rounded-lg bg-accent/40 px-3 py-2 text-xs font-medium text-foreground">
+                        <FileText className="h-3.5 w-3.5 text-violet shrink-0" />
                         <span className="truncate">{dName}</span>
                       </div>
                     ))}
@@ -302,7 +302,7 @@ export function ConceptGraphView() {
             </Card>
           ) : (
             <Card>
-              <p className="text-xs text-slate-400 italic text-center py-10">Select a node on the graph to inspect relationships.</p>
+              <p className="text-xs text-muted-foreground italic text-center py-10">Select a node on the graph to inspect relationships.</p>
             </Card>
           )}
         </div>

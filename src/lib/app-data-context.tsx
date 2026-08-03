@@ -32,6 +32,7 @@ import type {
   FileType, Difficulty, LearningModule, LearningResource,
 } from "@/lib/mock-data";
 import { _setGlobalOnRegister } from "@/lib/auth";
+import { AUDIT_LOG, type AuditEntry, appendAudit } from "@/lib/auth-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,8 @@ export interface AppUser {
   role: "Student" | "Faculty" | "Admin";
   status: "active" | "inactive";
   joinedAt: string;
+  /** Tracks whether user is still on the admin-created default password */
+  passwordStatus: "default" | "changed";
 }
 
 export interface AppSubject {
@@ -220,9 +223,14 @@ interface AppDataContextValue {
   addMultiModalChunk: (chunk: Omit<MultiModalChunk, "id">) => void;
 
   // User CRUD
-  addUser:          (user: Omit<AppUser, "id" | "joinedAt">) => void;
-  removeUser:       (id: string) => void;
-  toggleUserStatus: (id: string) => void;
+  addUser:            (user: Omit<AppUser, "id" | "joinedAt">) => void;
+  removeUser:         (id: string) => void;
+  toggleUserStatus:   (id: string) => void;
+  markPasswordChanged:(email: string) => void;
+
+  // Audit Log
+  auditLog: AuditEntry[];
+  logAudit: (actor: string, action: string, target: string) => void;
 
   // Subject CRUD
   addSubject:     (subject: Omit<AppSubject, "id" | "enrolledStudentIds">) => void;
@@ -288,6 +296,7 @@ function seedUsers(): AppUser[] {
     role: u.role as AppUser["role"],
     status: u.status as AppUser["status"],
     joinedAt: "2026-07-01",
+    passwordStatus: "changed" as const, // seeded demo accounts are not in default-pw state
   }));
 }
 
@@ -341,7 +350,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       const roleLabel = (role.charAt(0).toUpperCase() + role.slice(1)) as AppUser["role"];
       setUsers((prev) => {
         if (prev.some((u) => u.email.toLowerCase() === email.toLowerCase())) return prev;
-        return [...prev, { id: `u_${Date.now()}`, name, email, role: roleLabel, status: "active", joinedAt: new Date().toISOString().split("T")[0] }];
+        return [...prev, { id: `u_${Date.now()}`, name, email, role: roleLabel, status: "active", joinedAt: new Date().toISOString().split("T")[0], passwordStatus: "changed" }];
       });
     });
   }, []);
@@ -407,7 +416,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addUser = useCallback((user: Omit<AppUser, "id" | "joinedAt">) => {
-    setUsers((prev) => [...prev, { ...user, id: `u_${Date.now()}`, joinedAt: new Date().toISOString().split("T")[0] }]);
+    setUsers((prev) => [
+      ...prev,
+      {
+        ...user,
+        id: `u_${Date.now()}`,
+        joinedAt: new Date().toISOString().split("T")[0],
+        passwordStatus: (user.passwordStatus ?? "default") as AppUser["passwordStatus"],
+      },
+    ]);
   }, []);
 
   const removeUser = useCallback((id: string) => {
@@ -416,6 +433,18 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const toggleUserStatus = useCallback((id: string) => {
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u)));
+  }, []);
+
+  const markPasswordChanged = useCallback((email: string) => {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.email.toLowerCase() === email.toLowerCase() ? { ...u, passwordStatus: "changed" as const } : u
+      )
+    );
+  }, []);
+
+  const logAudit = useCallback((actor: string, action: string, target: string) => {
+    appendAudit(actor, action, target);
   }, []);
 
   const addSubject = useCallback((subj: Omit<AppSubject, "id" | "enrolledStudentIds">) => {
@@ -518,6 +547,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         addQuery,
         addAnnouncement,
         deleteAnnouncement,
+        markPasswordChanged,
+        auditLog: AUDIT_LOG,
+        logAudit,
       }}
     >
       {children}
