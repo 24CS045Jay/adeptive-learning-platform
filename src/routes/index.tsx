@@ -188,26 +188,23 @@ function LoginPage() {
 
   return (
     <div
-      className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 font-sans"
-      style={{ background: isDark ? "#0d0d14" : "var(--color-background)" }}
+      className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 font-sans"
+      style={{ background: isDark ? "#0d0d14" : "#f7f7fb" }}
     >
-      {/* ── Ambient background glows ── */}
+      {/* ── Ambient background glows (page level) ── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div
-          className="absolute -left-32 top-1/4 h-[500px] w-[500px] rounded-full opacity-[0.10] blur-[100px]"
+          className="absolute -left-32 top-1/4 h-[500px] w-[500px] rounded-full opacity-[0.08] blur-[100px]"
           style={{ background: "radial-gradient(circle, #8b5cf6 0%, transparent 70%)" }}
         />
         <div
-          className="absolute -right-32 bottom-1/4 h-[400px] w-[400px] rounded-full opacity-[0.07] blur-[90px]"
+          className="absolute -right-32 bottom-1/4 h-[400px] w-[400px] rounded-full opacity-[0.05] blur-[90px]"
           style={{ background: "radial-gradient(circle, #f5c451 0%, transparent 70%)" }}
         />
       </div>
 
-      {/* ── Concept Graph particle canvas ── */}
-      <ParticleCanvas />
-
       {/* ── Theme toggle top-right ── */}
-      <div className="fixed right-6 top-5 z-10">
+      <div className="fixed right-6 top-5 z-20">
         <button
           type="button"
           onClick={toggle}
@@ -236,81 +233,344 @@ function LoginPage() {
         </button>
       </div>
 
-      {/* ── Login card ── */}
+      {/* ── Two-panel floating card container ── */}
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-md"
+        className="relative z-10 w-full max-w-6xl mx-auto"
       >
-        {/* Book card outer glow */}
         <div
-          className="relative rounded-2xl"
+          className="relative rounded-2xl overflow-hidden"
           style={{
             boxShadow: "0 0 0 1px oklch(0.62 0.22 293 / 15%), 0 32px 80px -20px rgba(0,0,0,0.55), 0 0 60px -10px oklch(0.62 0.22 293 / 10%)",
           }}
         >
-          {/* Subtle "book spine" center line */}
-          <div
-            className="pointer-events-none absolute left-1/2 top-4 bottom-4 w-px -translate-x-1/2 rounded-full"
-            style={{ background: "linear-gradient(to bottom, transparent, oklch(0.62 0.22 293 / 8%), oklch(0.62 0.22 293 / 12%), oklch(0.62 0.22 293 / 8%), transparent)" }}
-            aria-hidden="true"
-          />
+          <div className="grid lg:grid-cols-[40%_60%] min-h-[600px]">
+            {/* ── LEFT PANEL (Form side) ── */}
+            <div
+              className="relative px-8 py-10 lg:px-12 lg:py-14"
+              style={{ background: isDark ? "#17171f" : "#ffffff" }}
+            >
+              {/* Logo lockup */}
+              <div className="mb-8 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet/15 ring-1 ring-violet/25 shadow-[0_0_12px_-2px_oklch(0.62_0.22_293_/_30%)]">
+                  <GraduationCap className="h-6 w-6 text-violet" />
+                </div>
+                <div className="leading-tight">
+                  <div className="font-serif text-2xl font-bold">
+                    <span className={isDark ? "text-white" : "text-foreground"}>AI </span>
+                    <span className="text-violet">Tutor</span>
+                  </div>
+                </div>
+              </div>
 
-          <div
-            className="rounded-2xl border border-border px-8 py-10"
-            style={{ background: isDark ? "#17171f" : "var(--color-card)" }}
-          >
-            {/* Logo */}
-            <div className="mb-7 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet/15 ring-1 ring-violet/25 shadow-[0_0_12px_-2px_oklch(0.62_0.22_293_/_30%)]">
-                <GraduationCap className="h-5 w-5 text-violet" />
+              {/* Headline and subtext */}
+              <div className="mb-6">
+                <h1 className="font-serif text-3xl font-bold text-foreground">Sign in to AI Tutor</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Your syllabus-grounded study companion
+                </p>
               </div>
-              <div className="leading-tight">
-                <div className="font-serif text-xl font-bold text-foreground">AI Tutor</div>
-                <div className="text-[11px] text-muted-foreground">CSPIT CSE · RAG Platform</div>
+
+              {/* Role tabs (pill-shaped segmented control) */}
+              <div className="mb-6">
+                <div
+                  className="inline-flex rounded-full p-1 gap-1"
+                  style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)" }}
+                >
+                  {ROLES.map((r) => {
+                    const isActive = activeRole === r.key;
+                    return (
+                      <button
+                        key={r.key}
+                        id={`role-tab-${r.key}`}
+                        type="button"
+                        onClick={() => { setActiveRole(r.key); setView("login"); }}
+                        className={cn(
+                          "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                          isActive 
+                            ? "bg-violet text-white shadow-sm" 
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {r.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Forms */}
+              <AnimatePresence mode="wait">
+                {view === "login" && (
+                  <motion.div
+                    key={`login-${activeRole}`}
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <LoginForm
+                      roleConfig={roleConfig}
+                      onForgot={() => setView("forgot")}
+                      onLoginSuccess={handleLoginSuccess}
+                    />
+                  </motion.div>
+                )}
+                {view === "forgot" && (
+                  <motion.div
+                    key="forgot"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <ForgotPasswordForm onBack={() => setView("login")} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Demo hint */}
+              <p className="mt-6 text-center text-xs text-muted-foreground opacity-70">
+                Demo credentials are pre-filled — just click <strong>Login</strong>.
+              </p>
             </div>
 
-            {/* Role tabs */}
-            <RoleTabs activeRole={activeRole} onSelect={(r) => { setActiveRole(r); setView("login"); }} />
+            {/* ── RIGHT PANEL (Brand/illustration side) ── */}
+            <div className="relative hidden lg:block overflow-hidden">
+              {/* Base gradient background */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: isDark 
+                    ? "linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #a855f7 100%)"
+                    : "linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #9333ea 100%)",
+                }}
+              />
 
-            {/* Forms */}
-            <AnimatePresence mode="wait">
-              {view === "login" && (
-                <motion.div
-                  key={`login-${activeRole}`}
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -8 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <LoginForm
-                    roleConfig={roleConfig}
-                    onForgot={() => setView("forgot")}
-                    onLoginSuccess={handleLoginSuccess}
-                  />
-                </motion.div>
-              )}
-              {view === "forgot" && (
-                <motion.div
-                  key="forgot"
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -8 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <ForgotPasswordForm onBack={() => setView("login")} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* Large decorative background shapes - matching reference style */}
+              <div className="absolute inset-0">
+                {/* Large circle/blob - top left */}
+                <div
+                  className="absolute -top-20 -left-20 rounded-full"
+                  style={{
+                    width: "400px",
+                    height: "400px",
+                    background: isDark 
+                      ? "radial-gradient(circle, rgba(167,139,250,0.4) 0%, rgba(139,92,246,0.2) 50%, transparent 100%)"
+                      : "radial-gradient(circle, rgba(233,213,255,0.6) 0%, rgba(216,180,254,0.3) 50%, transparent 100%)",
+                    filter: "blur(60px)",
+                  }}
+                />
+
+                {/* Large circle/blob - bottom right */}
+                <div
+                  className="absolute -bottom-32 -right-32 rounded-full"
+                  style={{
+                    width: "500px",
+                    height: "500px",
+                    background: isDark 
+                      ? "radial-gradient(circle, rgba(196,181,253,0.3) 0%, rgba(167,139,250,0.15) 50%, transparent 100%)"
+                      : "radial-gradient(circle, rgba(243,232,255,0.5) 0%, rgba(233,213,255,0.25) 50%, transparent 100%)",
+                    filter: "blur(80px)",
+                  }}
+                />
+
+                {/* Medium floating shape - center */}
+                <div
+                  className="absolute top-1/3 left-1/4 rounded-full"
+                  style={{
+                    width: "250px",
+                    height: "250px",
+                    background: isDark 
+                      ? "radial-gradient(circle, rgba(245,196,81,0.25) 0%, rgba(217,119,6,0.1) 50%, transparent 100%)"
+                      : "radial-gradient(circle, rgba(254,243,199,0.4) 0%, rgba(253,224,71,0.2) 50%, transparent 100%)",
+                    filter: "blur(50px)",
+                  }}
+                />
+
+                {/* Geometric accent shape - like reference */}
+                <div
+                  className="absolute top-0 right-0"
+                  style={{
+                    width: "60%",
+                    height: "70%",
+                    background: isDark 
+                      ? "linear-gradient(135deg, rgba(196,181,253,0.15) 0%, rgba(139,92,246,0.1) 100%)"
+                      : "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(233,213,255,0.15) 100%)",
+                    clipPath: "polygon(25% 0%, 100% 0%, 100% 100%, 0% 80%)",
+                    filter: "blur(30px)",
+                  }}
+                />
+
+                {/* Layered wave/curve effect - bottom */}
+                <div
+                  className="absolute bottom-0 left-0 right-0"
+                  style={{
+                    height: "200px",
+                    background: isDark 
+                      ? "linear-gradient(180deg, transparent 0%, rgba(139,92,246,0.2) 100%)"
+                      : "linear-gradient(180deg, transparent 0%, rgba(192,132,252,0.3) 100%)",
+                    filter: "blur(20px)",
+                  }}
+                />
+              </div>
+
+              {/* Subtle particle overlay - only in background */}
+              <div className="absolute inset-0 opacity-30">
+                <ParticleCanvas />
+              </div>
+
+              {/* Content overlay */}
+              <div className="relative h-full flex flex-col items-center justify-between p-12 z-10">
+                {/* Top: Logo wordmark with white badge style */}
+                <div className="text-center">
+                  <div
+                    className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl mb-4"
+                    style={{
+                      background: isDark 
+                        ? "rgba(255, 255, 255, 0.12)"
+                        : "rgba(255, 255, 255, 0.3)",
+                      backdropFilter: "blur(10px)",
+                    }}
+                  >
+                    <GraduationCap className="h-7 w-7 text-white" />
+                    <div className="font-serif text-2xl font-bold text-white">
+                      AI Tutor
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium text-white/90">
+                    Smart Study Assistant
+                  </p>
+                </div>
+
+                {/* Center: 3D Student Illustration with animated background */}
+                <div className="flex-1 flex items-end justify-center w-full px-8 pb-8">
+                  <div className="relative w-full max-w-lg">
+                    {/* Animated floating shapes behind character */}
+                    <motion.div
+                      className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full -z-10"
+                      style={{
+                        background: isDark 
+                          ? "radial-gradient(circle, rgba(245,196,81,0.4) 0%, transparent 70%)"
+                          : "radial-gradient(circle, rgba(253,224,71,0.5) 0%, transparent 70%)",
+                        filter: "blur(40px)",
+                      }}
+                      animate={{
+                        y: [0, -20, 0],
+                        scale: [1, 1.1, 1],
+                      }}
+                      transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    />
+                    
+                    <motion.div
+                      className="absolute top-1/2 right-1/4 w-24 h-24 rounded-full -z-10"
+                      style={{
+                        background: isDark 
+                          ? "radial-gradient(circle, rgba(167,139,250,0.5) 0%, transparent 70%)"
+                          : "radial-gradient(circle, rgba(196,181,253,0.6) 0%, transparent 70%)",
+                        filter: "blur(35px)",
+                      }}
+                      animate={{
+                        y: [0, 25, 0],
+                        x: [0, -15, 0],
+                        scale: [1, 1.15, 1],
+                      }}
+                      transition={{
+                        duration: 5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 0.5,
+                      }}
+                    />
+
+                    <motion.div
+                      className="absolute bottom-1/3 left-1/3 w-28 h-28 rounded-full -z-10"
+                      style={{
+                        background: isDark 
+                          ? "radial-gradient(circle, rgba(196,181,253,0.45) 0%, transparent 70%)"
+                          : "radial-gradient(circle, rgba(216,180,254,0.55) 0%, transparent 70%)",
+                        filter: "blur(38px)",
+                      }}
+                      animate={{
+                        y: [0, 20, 0],
+                        x: [0, 10, 0],
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{
+                        duration: 4.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 1,
+                      }}
+                    />
+
+                    {/* Glow effect behind character */}
+                    <div
+                      className="absolute inset-0 -z-10"
+                      style={{
+                        background: isDark 
+                          ? "radial-gradient(ellipse at bottom, rgba(255,255,255,0.15) 0%, transparent 60%)"
+                          : "radial-gradient(ellipse at bottom, rgba(255,255,255,0.4) 0%, transparent 60%)",
+                        filter: "blur(40px)",
+                      }}
+                    />
+                    
+                    {/* Character image - white background removed via CSS filter */}
+                    <img
+                      src="/assets/illustrations/student-illustration.png"
+                      alt="Male student with backpack and books"
+                      className="w-full h-auto object-contain relative z-10"
+                      style={{
+                        filter: `
+                          drop-shadow(0 25px 50px rgba(0,0,0,0.4))
+                          contrast(1.05)
+                          saturate(1.1)
+                        `,
+                        maxHeight: "480px",
+                        background: "transparent",
+                      }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target.src.includes('.png')) {
+                          target.src = '/assets/illustrations/student-illustration.svg';
+                        } else {
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.fallback-placeholder')) {
+                            const fallback = document.createElement('div');
+                            fallback.className = 'fallback-placeholder flex flex-col items-center justify-center gap-4 py-12';
+                            fallback.innerHTML = `
+                              <div class="text-6xl opacity-50">👨‍🎓</div>
+                              <div class="text-center text-white/70">
+                                <p class="text-sm font-medium">Add your 3D student illustration</p>
+                                <p class="text-xs mt-1 opacity-70">Place image at:</p>
+                                <p class="text-xs font-mono mt-1">/assets/illustrations/student-illustration.png</p>
+                              </div>
+                            `;
+                            parent.appendChild(fallback);
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Bottom: Subtle tagline */}
+                <div className="text-center">
+                  <p className="text-xs text-white/60 font-medium">
+                    CSPIT CSE · RAG-Powered Learning Platform
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Demo hint */}
-        <p className="mt-5 text-center text-xs text-muted-foreground opacity-70">
-          Demo credentials are pre-filled — just click <strong>Login</strong>.
-        </p>
       </motion.div>
 
       {/* ── Book animation overlay ── */}
@@ -323,40 +583,7 @@ function LoginPage() {
   );
 }
 
-// ─── Role Tabs ────────────────────────────────────────────────────────────────
 
-function RoleTabs({ activeRole, onSelect }: { activeRole: Role; onSelect: (r: Role) => void }) {
-  return (
-    <div className="mb-7 flex rounded-xl bg-muted/60 p-1">
-      {ROLES.map((r) => {
-        const Icon = r.icon;
-        const isActive = activeRole === r.key;
-        return (
-          <button
-            key={r.key}
-            id={`role-tab-${r.key}`}
-            type="button"
-            onClick={() => onSelect(r.key)}
-            className={cn(
-              "relative flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-all duration-200",
-              isActive ? "bg-card text-violet shadow-sm" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {isActive && (
-              <motion.div
-                layoutId="role-tab-bg"
-                className="absolute inset-0 rounded-lg bg-card shadow-sm"
-                transition={{ type: "spring", stiffness: 350, damping: 30 }}
-              />
-            )}
-            <Icon className={cn("relative z-10 h-4 w-4 transition-all", isActive && "text-violet")} />
-            <span className="relative z-10">{r.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 // ─── Login Form ───────────────────────────────────────────────────────────────
 
@@ -371,10 +598,12 @@ function LoginForm({
 }) {
   const { login, loginWithGoogle } = useAuth();
   const id = useId();
+  const { isDark } = useTheme();
 
   const [email, setEmail] = useState<string>(roleConfig.placeholder.email);
   const [password, setPassword] = useState<string>(roleConfig.placeholder.password);
   const [showPw, setShowPw] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showGoogleModal, setShowGoogleModal] = useState(false);
@@ -400,18 +629,13 @@ function LoginForm({
   return (
     <>
       <form onSubmit={handleSubmit} noValidate>
-        <div className="mb-6">
-          <h1 className="font-serif text-2xl font-bold text-foreground">{roleConfig.headline}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{roleConfig.subtext}</p>
-        </div>
-
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             id={`${id}-error`}
             role="alert"
-            className="mb-5 flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/8 px-4 py-3 text-sm text-danger"
+            className="mb-5 flex items-start gap-2 rounded-full border border-danger/30 bg-danger/8 px-5 py-3 text-sm text-danger"
           >
             <span className="mt-0.5">⚠</span>
             <span>{error}</span>
@@ -422,7 +646,7 @@ function LoginForm({
         <button
           type="button"
           onClick={() => setShowGoogleModal(true)}
-          className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-card/50 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent/30 hover:border-violet/25"
+          className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-card/50 py-3 text-sm font-medium text-foreground transition hover:bg-accent/30 hover:border-violet/25"
         >
           <Chrome className="h-4 w-4 text-muted-foreground" />
           Continue with Google
@@ -431,73 +655,94 @@ function LoginForm({
         {/* Divider */}
         <div className="relative my-5 flex items-center gap-3">
           <div className="flex-1 border-t border-border" />
-          <span className="text-xs text-muted-foreground">Or with</span>
+          <span className="text-xs text-muted-foreground">Or</span>
           <div className="flex-1 border-t border-border" />
         </div>
 
-        {/* Email */}
+        {/* Email with icon inside */}
         <div className="mb-4">
-          <label htmlFor={`${id}-email`} className="mb-1.5 block text-sm font-medium text-foreground">
-            Email
-          </label>
-          <input
-            id={`${id}-email`}
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={roleConfig.placeholder.email}
-            required
-            className="w-full rounded-xl border border-border bg-background/60 px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]"
-          />
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              id={`${id}-email`}
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address"
+              required
+              className={cn(
+                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
+                "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
+                isDark ? "border-border" : "border-border"
+              )}
+            />
+          </div>
         </div>
 
-        {/* Password */}
-        <div className="mb-2">
-          <label htmlFor={`${id}-password`} className="mb-1.5 block text-sm font-medium text-foreground">
-            Password
-          </label>
+        {/* Password with icon inside */}
+        <div className="mb-3">
           <div className="relative">
+            <Shield className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               id={`${id}-password`}
               type={showPw ? "text" : "password"}
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Password"
               required
-              className="w-full rounded-xl border border-border bg-background/60 px-4 py-2.5 pr-11 text-sm text-foreground outline-none transition focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]"
+              className={cn(
+                "w-full rounded-full border bg-background/60 pl-11 pr-11 py-3 text-sm text-foreground outline-none transition",
+                "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
+                isDark ? "border-border" : "border-border"
+              )}
             />
             <button
               type="button"
               aria-label={showPw ? "Hide password" : "Show password"}
               onClick={() => setShowPw((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
             >
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
         </div>
 
-        {/* Forgot link */}
-        <div className="mb-6 flex justify-end">
+        {/* Remember me & Forgot password row */}
+        <div className="mb-6 flex items-center justify-between">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-border text-violet focus:ring-violet focus:ring-2 focus:ring-offset-0 cursor-pointer"
+              style={{
+                accentColor: "#8b5cf6",
+              }}
+            />
+            <span className="text-muted-foreground">Remember me</span>
+          </label>
           <button
             type="button"
             onClick={onForgot}
-            className="text-xs font-medium text-violet transition hover:underline hover:text-violet/80"
+            className="text-sm font-medium text-violet transition hover:underline hover:text-violet/80"
           >
             Forgot password?
           </button>
         </div>
 
-        {/* Submit */}
+        {/* Submit button with gradient */}
         <motion.button
           id={`login-btn-${roleConfig.key}`}
           type="submit"
           disabled={loading}
           whileTap={{ scale: 0.97 }}
-          whileHover={{ boxShadow: "0 0 22px -4px oklch(0.62 0.22 293 / 55%)" }}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9d72f7] to-[#7c3aed] py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60"
+          whileHover={{ boxShadow: "0 0 24px -4px oklch(0.62 0.22 293 / 60%)" }}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white shadow-md transition disabled:opacity-60",
+            "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]"
+          )}
         >
           {loading ? "Signing in…" : "Login"}
         </motion.button>
@@ -662,6 +907,7 @@ function GoogleSignInModal({
 
 function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
   const { sendPasswordReset } = useAuth();
+  const { isDark } = useTheme();
   const id = useId();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -686,47 +932,55 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="font-serif text-2xl font-bold text-foreground">Forgot password?</h1>
+          <h2 className="font-serif text-xl font-bold text-foreground">Forgot password?</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">We'll send a reset link to your email.</p>
         </div>
       </div>
 
       {sent ? (
-        <div className="rounded-xl border border-success/30 bg-success/8 px-5 py-6 text-center">
-          <div className="text-2xl">📬</div>
-          <div className="mt-3 font-semibold text-foreground">Reset link sent!</div>
-          <p className="mt-1 text-sm text-muted-foreground">Check your inbox at <strong>{email}</strong>.</p>
-          <p className="mt-1 text-xs text-muted-foreground">(Demo — no email is actually sent.)</p>
-          <button type="button" onClick={onBack} className="mt-5 text-sm font-medium text-violet hover:underline">
+        <div className="rounded-2xl border border-success/30 bg-success/8 px-6 py-8 text-center">
+          <div className="text-3xl mb-3">📬</div>
+          <div className="font-semibold text-foreground">Reset link sent!</div>
+          <p className="mt-2 text-sm text-muted-foreground">Check your inbox at <strong>{email}</strong>.</p>
+          <p className="mt-1 text-xs text-muted-foreground opacity-70">(Demo — no email is actually sent.)</p>
+          <button type="button" onClick={onBack} className="mt-6 text-sm font-medium text-violet hover:underline">
             Back to login
           </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} noValidate>
           {error && (
-            <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/8 px-4 py-3 text-sm text-danger">
+            <div role="alert" className="mb-4 flex items-start gap-2 rounded-full border border-danger/30 bg-danger/8 px-5 py-3 text-sm text-danger">
               <span>⚠</span><span>{error}</span>
             </div>
           )}
           <div className="mb-6">
-            <label htmlFor={`${id}-reset-email`} className="mb-1.5 block text-sm font-medium text-foreground">
-              Email address
-            </label>
-            <input
-              id={`${id}-reset-email`}
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@charusat.edu.in"
-              required
-              className="w-full rounded-xl border border-border bg-background/60 px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]"
-            />
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                id={`${id}-reset-email`}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@charusat.edu.in"
+                required
+                className={cn(
+                  "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
+                  "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
+                  isDark ? "border-border" : "border-border"
+                )}
+              />
+            </div>
           </div>
           <motion.button
             type="submit"
             disabled={loading}
             whileTap={{ scale: 0.97 }}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9d72f7] to-[#7c3aed] py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60"
+            whileHover={{ boxShadow: "0 0 24px -4px oklch(0.62 0.22 293 / 60%)" }}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white shadow-md transition disabled:opacity-60",
+              "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]"
+            )}
           >
             {loading && (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -736,7 +990,7 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
             )}
             {loading ? "Sending…" : "Send reset link"}
           </motion.button>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
+          <p className="mt-5 text-center text-sm text-muted-foreground">
             Remembered it?{" "}
             <button type="button" onClick={onBack} className="font-medium text-violet hover:underline">Back to login</button>
           </p>
