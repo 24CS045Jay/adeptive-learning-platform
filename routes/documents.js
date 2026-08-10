@@ -3,8 +3,11 @@ import multer from "multer";
 import { cloudinary } from "../lib/cloudinary.js";
 import { Document, Subject, AuditLog } from "../models/index.js";
 import { authenticate, requireRole } from "../middleware/auth.js";
+import { extractText } from "../lib/textExtract.js";
 
 const router = express.Router();
+
+const RAG_SERVICE_URL = process.env.RAG_SERVICE_URL || "http://localhost:8001";
 
 // Multer memory storage configuration for streaming files directly to Cloudinary
 const upload = multer({
@@ -103,8 +106,9 @@ router.post("/upload", authenticate, requireRole("faculty", "admin"), handleUplo
       cloudinaryPublicId: cloudinaryResult.public_id,
       resourceType: "raw",
       status: "pending",
+      ingestionStatus: "pending",
       chunkCount: 0,
-      chromaCollection: `collection_${subject.code.toLowerCase()}`,
+      chromaCollection: "",
     });
 
     // Log to AuditLog
@@ -133,21 +137,96 @@ router.post("/upload", authenticate, requireRole("faculty", "admin"), handleUplo
 // PATCH /api/documents/:id/approve - Admin only
 router.patch("/:id/approve", authenticate, requireRole("admin"), async (req, res) => {
   try {
-    const doc = await Document.findById(req.params.id);
+    const doc = await Document.findById(req.params.id).populate("subjectId", "name code");
     if (!doc) return res.status(404).json({ error: "Document not found." });
 
+    // Mark as approved first so it's visible regardless of ingestion outcome
     doc.status = "approved";
-    doc.chunkCount = Math.floor(Math.random() * 150) + 50; // Mock chunk count
+    await doc.save();
+
+    // ── Real RAG ingestion ──────────────────────────────────────────────────
+    let ingestionStatus = "failed";
+    let chunkCount = 0;
+    const subjectCode = doc.subjectId?.code || "GENERAL";
+    const collectionName = `subject_${subjectCode}`;
+
+    try {
+      // Step 1: Extract plain text from the file at Cloudinary URL
+      const text = await extractText(doc.fileUrl, doc.fileName);
+
+      if (!text || !text.trim()) {
+        console.warn(`[Ingest] Document ${doc._id} (${doc.fileName}) produced empty text after extraction.`);
+      }
+
+      // Step 2: Send to Python RAG service for chunking + embedding
+      const ingestRes = await fetch(`${RAG_SERVICE_URL}/ingest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentId: String(doc._id),
+          subjectCode,
+          text: text || "",
+          metadata: {
+            subject: subjectCode,
+            uploadedAt: doc.createdAt?.toISOString() ?? new Date().toISOString(),
+            fileName: doc.fileName,
+          },
+        }),
+        signal: AbortSignal.timeout(120_000), // 2 min timeout for large docs
+      });
+
+      if (!ingestRes.ok) {
+        const errBody = await ingestRes.text();
+        throw new Error(`RAG service returned ${ingestRes.status}: ${errBody.slice(0, 300)}`);
+      }
+
+      const ingestData = await ingestRes.json();
+      chunkCount = ingestData.chunkCount ?? 0;
+      ingestionStatus = "ok";
+
+      console.log(`[Ingest] Document ${doc._id} ingested: ${chunkCount} chunks → ${collectionName}`);
+    } catch (ingestErr) {
+      // Ingestion failed — document stays approved but flagged
+      ingestionStatus = "failed";
+      console.error(`[Ingest] Failed for document ${doc._id}:`, ingestErr.message);
+
+      await AuditLog.create({
+        actorId: req.user._id || req.user.id,
+        action: "INGEST_FAILED",
+        details: {
+          documentId: doc._id,
+          fileName: doc.fileName,
+          subjectCode,
+          error: ingestErr.message,
+        },
+      });
+    }
+
+    // Update document record with ingestion outcome
+    doc.chunkCount = chunkCount;
+    doc.chromaCollection = collectionName;
+    doc.ingestionStatus = ingestionStatus;
     await doc.save();
 
     await AuditLog.create({
       actorId: req.user._id || req.user.id,
       action: "APPROVE_DOCUMENT",
-      details: { documentId: doc._id, fileName: doc.fileName, status: "approved" },
+      details: {
+        documentId: doc._id,
+        fileName: doc.fileName,
+        status: "approved",
+        ingestionStatus,
+        chunkCount,
+        collection: collectionName,
+      },
     });
 
-    return res.json({ message: "Document approved successfully.", document: doc });
+    return res.json({
+      message: `Document approved successfully. Ingestion: ${ingestionStatus}.`,
+      document: doc,
+    });
   } catch (error) {
+    console.error("[Document Approve Error]:", error);
     return res.status(500).json({ error: "Failed to approve document." });
   }
 });
@@ -155,20 +234,43 @@ router.patch("/:id/approve", authenticate, requireRole("admin"), async (req, res
 // PATCH /api/documents/:id/reject - Admin only
 router.patch("/:id/reject", authenticate, requireRole("admin"), async (req, res) => {
   try {
-    const doc = await Document.findById(req.params.id);
+    const doc = await Document.findById(req.params.id).populate("subjectId", "code");
     if (!doc) return res.status(404).json({ error: "Document not found." });
 
+    const wasApproved = doc.status === "approved";
     doc.status = "rejected";
     await doc.save();
+
+    // If it was approved, remove its vectors from ChromaDB to avoid orphaned data
+    if (wasApproved) {
+      const subjectCode = doc.subjectId?.code || "GENERAL";
+      try {
+        const delRes = await fetch(`${RAG_SERVICE_URL}/delete-document`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documentId: String(doc._id), subjectCode }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!delRes.ok) {
+          console.warn(`[RAG Delete] Non-ok response for doc ${doc._id}: ${delRes.status}`);
+        } else {
+          const delData = await delRes.json();
+          console.log(`[RAG Delete] Removed ${delData.deleted} vectors for rejected doc ${doc._id}`);
+        }
+      } catch (delErr) {
+        console.warn(`[RAG Delete] Failed to delete vectors for rejected doc ${doc._id}:`, delErr.message);
+      }
+    }
 
     await AuditLog.create({
       actorId: req.user._id || req.user.id,
       action: "REJECT_DOCUMENT",
-      details: { documentId: doc._id, fileName: doc.fileName, status: "rejected" },
+      details: { documentId: doc._id, fileName: doc.fileName, status: "rejected", vectorsRemoved: wasApproved },
     });
 
     return res.json({ message: "Document rejected.", document: doc });
   } catch (error) {
+    console.error("[Document Reject Error]:", error);
     return res.status(500).json({ error: "Failed to reject document." });
   }
 });
@@ -176,8 +278,10 @@ router.patch("/:id/reject", authenticate, requireRole("admin"), async (req, res)
 // DELETE /api/documents/:id - Admin only (Deletes from Cloudinary AND MongoDB together)
 router.delete("/:id", authenticate, requireRole("admin"), async (req, res) => {
   try {
-    const doc = await Document.findById(req.params.id);
+    const doc = await Document.findById(req.params.id).populate("subjectId", "code");
     if (!doc) return res.status(404).json({ error: "Document not found." });
+
+    const wasApproved = doc.status === "approved";
 
     // Step 1: Remove from Cloudinary using cloudinaryPublicId
     try {
@@ -188,14 +292,40 @@ router.delete("/:id", authenticate, requireRole("admin"), async (req, res) => {
       console.warn("[Cloudinary Delete Warning]:", cErr.message);
     }
 
-    // Step 2: Delete Mongo Document record
+    // Step 2: Remove vectors from ChromaDB if document was ever approved
+    if (wasApproved) {
+      const subjectCode = doc.subjectId?.code || "GENERAL";
+      try {
+        const delRes = await fetch(`${RAG_SERVICE_URL}/delete-document`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documentId: String(doc._id), subjectCode }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!delRes.ok) {
+          console.warn(`[RAG Delete] Non-ok for doc ${doc._id}: ${delRes.status}`);
+        } else {
+          const delData = await delRes.json();
+          console.log(`[RAG Delete] Removed ${delData.deleted} vectors for deleted doc ${doc._id}`);
+        }
+      } catch (delErr) {
+        console.warn(`[RAG Delete] Could not remove vectors for deleted doc ${doc._id}:`, delErr.message);
+      }
+    }
+
+    // Step 3: Delete Mongo Document record
     await Document.findByIdAndDelete(doc._id);
 
-    // Step 3: Log to AuditLog
+    // Step 4: Log to AuditLog
     await AuditLog.create({
       actorId: req.user._id || req.user.id,
       action: "DELETE_DOCUMENT",
-      details: { documentId: doc._id, fileName: doc.fileName, cloudinaryPublicId: doc.cloudinaryPublicId },
+      details: {
+        documentId: doc._id,
+        fileName: doc.fileName,
+        cloudinaryPublicId: doc.cloudinaryPublicId,
+        vectorsRemoved: wasApproved,
+      },
     });
 
     return res.json({ message: "Document deleted from Cloudinary and MongoDB successfully.", id: req.params.id });
