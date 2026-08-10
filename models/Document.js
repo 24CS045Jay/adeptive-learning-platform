@@ -9,6 +9,7 @@ const documentSchema = new mongoose.Schema(
     cloudinaryPublicId: { type: String, required: true },
     resourceType: { type: String, default: "raw" },
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+    ingestionStatus: { type: String, enum: ["pending", "ok", "failed"], default: "pending" },
     chunkCount: { type: Number, default: 0 },
     chromaCollection: { type: String, default: "" },
   },

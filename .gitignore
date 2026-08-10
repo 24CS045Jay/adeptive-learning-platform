@@ -38,3 +38,11 @@ dist-ssr
 .env.development
 .env.production
 
+# ChromaDB vector index (regenerated on document approval — do not commit)
+chroma_data/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+*.pyo
+ml_service/__pycache__/
