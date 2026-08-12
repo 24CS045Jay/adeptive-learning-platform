@@ -30,17 +30,19 @@ router.get("/:id", authenticate, async (req, res) => {
 router.post("/", authenticate, requireRole("admin"), async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ error: "Name, email, password, and role are required." });
+    if (!name || !email || !role) {
+      return res.status(400).json({ error: "Name, email, and role are required." });
     }
 
-    const existing = await User.findOne({ email: email.trim().toLowerCase() });
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await User.findOne({ email: cleanEmail });
     if (existing) {
       return res.status(400).json({ error: "User with this email already exists." });
     }
 
+    const passToHash = password || "password1234";
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(passToHash, salt);
 
     const user = await User.create({
       name: name.trim(),
@@ -100,7 +102,13 @@ router.put("/:id", authenticate, requireRole("admin"), async (req, res) => {
 // DELETE /api/users/:id - Delete user (Admin only)
 router.delete("/:id", authenticate, requireRole("admin"), async (req, res) => {
   try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
+    const target = req.params.id;
+    let deleted;
+    if (target.match(/^[0-9a-fA-F]{24}$/)) {
+      deleted = await User.findByIdAndDelete(target);
+    } else {
+      deleted = await User.findOneAndDelete({ email: target.trim().toLowerCase() });
+    }
     if (!deleted) return res.status(404).json({ error: "User not found." });
 
     await AuditLog.create({
@@ -109,7 +117,7 @@ router.delete("/:id", authenticate, requireRole("admin"), async (req, res) => {
       details: { deletedUserId: deleted._id, email: deleted.email },
     });
 
-    return res.json({ message: "User deleted successfully.", id: req.params.id });
+    return res.json({ message: "User deleted successfully.", id: target });
   } catch (error) {
     return res.status(500).json({ error: "Failed to delete user." });
   }

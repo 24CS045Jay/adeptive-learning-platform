@@ -19,6 +19,9 @@ const ragInteractionLogSchema = new mongoose.Schema(
         chunkIndex: { type: Number },
       },
     ],
+    hasVisual: { type: Boolean, default: false },
+    visualType: { type: String, default: null },
+    hasWorkedExample: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

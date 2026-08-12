@@ -15,16 +15,9 @@ export const Route = createFileRoute("/faculty/quizzes")({
 });
 
 function QuizManager() {
-  const { documents, subjects } = useAppData();
+  const { documents, subjects, quizzes: contextQuizzes } = useAppData();
 
-  const [quizzes, setQuizzes] = useState<Quiz[]>(() => {
-    if (typeof window === "undefined") return INITIAL_QUIZZES;
-    try {
-      const saved = localStorage.getItem("ai_tutor_quizzes");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_QUIZZES;
-  });
+  const [quizzes, setQuizzes] = useState<Quiz[]>(INITIAL_QUIZZES);
 
   const approvedDocs = documents.filter((d) => d.status === "approved");
 
@@ -39,10 +32,6 @@ function QuizManager() {
 
   const saveQuizzesToStore = (newList: Quiz[]) => {
     setQuizzes(newList);
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem("ai_tutor_quizzes", JSON.stringify(newList));
-    } catch {}
   };
 
   const handleGenerate = async () => {

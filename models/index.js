@@ -1,6 +1,7 @@
 export { User } from "./User.js";
 export { Subject } from "./Subject.js";
 export { Document } from "./Document.js";
+export { DocumentChunk } from "./DocumentChunk.js";
 export { Quiz } from "./Quiz.js";
 export { Question } from "./Question.js";
 export { Attempt } from "./Attempt.js";
@@ -9,4 +10,11 @@ export { Announcement } from "./Announcement.js";
 export { AuditLog } from "./AuditLog.js";
 export { Escalation } from "./Escalation.js";
 export { RagInteractionLog } from "./RagInteractionLog.js";
-
+export { Module } from "./Module.js";
+export { Resource } from "./Resource.js";
+export { Notification } from "./Notification.js";
+export { Discussion } from "./Discussion.js";
+export { Feedback } from "./Feedback.js";
+export { ConceptNode } from "./ConceptNode.js";
+export { ConceptEdge } from "./ConceptEdge.js";
+export { Conversation } from "./Conversation.js";

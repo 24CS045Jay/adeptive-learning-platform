@@ -4,19 +4,27 @@ import {
   Send, Sparkles, Sliders,
   FileText, History, Plus, Trash2,
   BookOpen, ThumbsUp, ThumbsDown, CheckCircle2,
-  AlertTriangle, ExternalLink,
+  AlertTriangle, ExternalLink, Code2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { PageHeader, Card } from "@/components/app-shell";
 import { useAppData } from "@/lib/app-data-context";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { MermaidRenderer } from "@/components/MermaidRenderer";
 
 export const Route = createFileRoute("/student/ask")({
   component: AskTutorPage,
 });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+export type VisualData =
+  | { type: "flowchart"; steps: string[] }
+  | { type: "comparison_chart"; categories: string[]; values: number[]; label?: string }
+  | { type: "concept_map"; nodes: string[]; edges: { from: string; to: string; relation?: string }[] }
+  | null;
 
 interface SourceChip {
   documentId: string | null;
@@ -25,7 +33,10 @@ interface SourceChip {
 }
 
 interface ApiResponse {
+  conversationId?: string;
   answer: string;
+  worked_example?: string | null;
+  visual?: VisualData;
   escalated: boolean;
   confidence: number;
   sources: SourceChip[];
@@ -36,6 +47,8 @@ interface ChatMessage {
   id: string;
   role: "user" | "ai";
   text: string;
+  worked_example?: string | null;
+  visual?: VisualData;
   timestamp: string;
   escalated?: boolean;
   confidence?: number;
@@ -45,6 +58,7 @@ interface ChatMessage {
 
 interface ChatSession {
   id: string;
+  mongoId?: string;
   title: string;
   subject: string;
   subjectId: string;
@@ -53,8 +67,6 @@ interface ChatSession {
 }
 
 // ── Backend base URL ────────────────────────────────────────────────────────
-// Always target the Express backend on port 5000 during local development.
-// Change this to "" (empty string) if you add a Vite proxy or deploy to production.
 const API_BASE = "http://localhost:5000";
 
 // ── Typing indicator ──────────────────────────────────────────────────────────
@@ -73,9 +85,126 @@ function TypingIndicator() {
           />
         ))}
       </div>
-      <span className="text-xs text-muted-foreground italic">Thinking…</span>
+      <span className="text-xs text-muted-foreground italic">Thinking & structuring…</span>
     </div>
   );
+}
+
+// ── Visual Renderer ───────────────────────────────────────────────────────────
+function VisualRenderer({ visual }: { visual: VisualData }) {
+  if (!visual) return null;
+
+  if (visual.type === "flowchart") {
+    const steps = visual.steps || [];
+    if (steps.length === 0) return null;
+
+    const nodesDef = steps
+      .map((s, i) => `  Node${i}["${i + 1}. ${s.replace(/"/g, "'")}"]`)
+      .join("\n");
+    const edgesDef = steps
+      .slice(0, -1)
+      .map((_, i) => `  Node${i} --> Node${i + 1}`)
+      .join("\n");
+
+    const mermaidText = `graph TD\n${nodesDef}\n${edgesDef}`;
+
+    return (
+      <div className="my-3 space-y-1.5">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-violet flex items-center gap-1.5">
+          <Sparkles className="h-3.5 w-3.5" /> Flowchart Step Sequence
+        </div>
+        <MermaidRenderer chart={mermaidText} />
+      </div>
+    );
+  }
+
+  if (visual.type === "concept_map") {
+    const nodes = visual.nodes || [];
+    const edges = visual.edges || [];
+    if (nodes.length === 0) return null;
+
+    const nodeMap: Record<string, string> = {};
+    nodes.forEach((n, i) => {
+      nodeMap[n] = `N${i}`;
+    });
+
+    const nodesDef = nodes
+      .map((n, i) => `  N${i}["${n.replace(/"/g, "'")}"]`)
+      .join("\n");
+
+    const edgesDef = edges
+      .map((e) => {
+        const fromId = nodeMap[e.from] || `N_${e.from.replace(/\W/g, "")}`;
+        const toId = nodeMap[e.to] || `N_${e.to.replace(/\W/g, "")}`;
+        const rel = e.relation ? `-- "${e.relation.replace(/"/g, "'")}" -->` : "-->";
+        return `  ${fromId} ${rel} ${toId}`;
+      })
+      .join("\n");
+
+    const mermaidText = `graph TD\n${nodesDef}\n${edgesDef}`;
+
+    return (
+      <div className="my-3 space-y-1.5">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-violet flex items-center gap-1.5">
+          <Sparkles className="h-3.5 w-3.5" /> Concept Map
+        </div>
+        <MermaidRenderer chart={mermaidText} />
+      </div>
+    );
+  }
+
+  if (visual.type === "comparison_chart") {
+    const categories = visual.categories || [];
+    const values = visual.values || [];
+    const chartData = categories.map((cat, i) => ({
+      category: cat,
+      value: values[i] ?? 0,
+    }));
+    const colors = ["#7c3aed", "#3b82f6", "#10b981", "#f59e0b", "#ec4899"];
+
+    return (
+      <div className="my-3 rounded-xl border border-violet/20 bg-card p-4 shadow-sm space-y-2">
+        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-violet">
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" /> Comparison Chart
+          </span>
+          {visual.label && (
+            <span className="text-muted-foreground font-normal text-xs">{visual.label}</span>
+          )}
+        </div>
+        <div className="h-48 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+              <XAxis
+                dataKey="category"
+                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                interval={0}
+                angle={-15}
+                textAnchor="end"
+              />
+              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1e1b4b",
+                  borderColor: "#7c3aed",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  color: "#fff",
+                }}
+              />
+              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                {chartData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 // ── Source chip ───────────────────────────────────────────────────────────────
@@ -118,7 +247,9 @@ function SourceModal({ source, onClose }: { source: SourceChip; onClose: () => v
         <div className="rounded-xl bg-muted p-4 space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">File</span>
-            <span className="font-semibold text-foreground max-w-[220px] truncate text-right">{source.fileName}</span>
+            <span className="font-semibold text-foreground max-w-[220px] truncate text-right">
+              {source.fileName}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Chunk</span>
@@ -127,13 +258,12 @@ function SourceModal({ source, onClose }: { source: SourceChip; onClose: () => v
           {source.documentId && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Document ID</span>
-              <span className="font-mono text-[11px] text-muted-foreground">{source.documentId.slice(-8)}…</span>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {source.documentId.slice(-8)}…
+              </span>
             </div>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Deep-linking into the document viewer is coming in a future update.
-        </p>
         <button
           type="button"
           onClick={onClose}
@@ -152,9 +282,8 @@ function AskTutorPage() {
   const { user } = useAuth();
   const id = useId();
 
-  // Track selected subject as { id, name } pair
   const firstSubject = subjects[0];
-  const [selectedSubjectId,   setSelectedSubjectId]   = useState<string>(firstSubject?.id ?? "");
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(firstSubject?.id ?? "");
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>(firstSubject?.name ?? "");
   const [selectedSubjectCode, setSelectedSubjectCode] = useState<string>(firstSubject?.code ?? "");
 
@@ -172,39 +301,113 @@ function AskTutorPage() {
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     if (typeof window === "undefined") return [makeDefaultSession()];
     try {
-      const saved = localStorage.getItem("ai_tutor_chat_sessions_v2");
+      const saved = localStorage.getItem("ai_tutor_chat_sessions_v3");
       if (saved) return JSON.parse(saved);
     } catch {}
     return [makeDefaultSession()];
   });
 
   const [activeSessionId, setActiveSessionId] = useState<string>(sessions[0]?.id ?? "sess_1");
-  const [input,           setInput]           = useState("");
-  const [isProcessing,    setIsProcessing]    = useState(false);
-  const [selectedSource,  setSelectedSource]  = useState<SourceChip | null>(null);
+  const [input, setInput] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<SourceChip | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load past conversations from MongoDB backend
+  useEffect(() => {
+    async function fetchServerConversations() {
+      try {
+        const res = await fetch(`${API_BASE}/api/conversations`, {
+          headers: {
+            ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
+            ...(user?.id ? { "x-user-id": user.id } : {}),
+          },
+        });
+        if (res.ok) {
+          const convs = await res.json();
+          if (Array.isArray(convs) && convs.length > 0) {
+            const loadedSessions: ChatSession[] = convs.map((c: any) => ({
+              id: c.id || c._id,
+              mongoId: c.id || c._id,
+              title: c.title,
+              subject: c.subjectName || "General",
+              subjectId: c.subjectId || "",
+              createdAt: new Date(c.updatedAt).toLocaleDateString(),
+              messages: [],
+            }));
+            setSessions(loadedSessions);
+            setActiveSessionId(loadedSessions[0].id);
+          }
+        }
+      } catch (e) {
+        console.warn("[Ask Tutor] Could not fetch server conversations:", e);
+      }
+    }
+
+    fetchServerConversations();
+  }, [user?.id, user?.token]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      localStorage.setItem("ai_tutor_chat_sessions_v2", JSON.stringify(sessions));
+      localStorage.setItem("ai_tutor_chat_sessions_v3", JSON.stringify(sessions));
     } catch {}
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [sessions]);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) ?? sessions[0];
 
-  // Sync selected subject state whenever active session changes
   useEffect(() => {
     if (!activeSession) return;
-    const subj = subjects.find((s) => s.id === activeSession.subjectId || s.name === activeSession.subject);
+    const subj = subjects.find(
+      (s) => s.id === activeSession.subjectId || s.name === activeSession.subject
+    );
     if (subj) {
       setSelectedSubjectId(subj.id);
       setSelectedSubjectName(subj.name);
       setSelectedSubjectCode(subj.code);
     }
   }, [activeSessionId, activeSession?.subject, activeSession?.subjectId, subjects]);
+
+  // Load conversation messages from server when selected
+  const handleSelectSession = async (sessId: string) => {
+    setActiveSessionId(sessId);
+    const target = sessions.find((s) => s.id === sessId);
+    if (target && target.messages.length === 0 && target.mongoId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/conversations/${target.mongoId}`, {
+          headers: {
+            ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
+            ...(user?.id ? { "x-user-id": user.id } : {}),
+          },
+        });
+        if (res.ok) {
+          const convData = await res.json();
+          const msgs: ChatMessage[] = (convData.messages || []).map((m: any, idx: number) => ({
+            id: m._id || `msg_${idx}`,
+            role: m.role === "student" ? "user" : "ai",
+            text: m.text,
+            worked_example: m.worked_example || null,
+            visual: m.visual || null,
+            sources: m.sources || [],
+            timestamp: m.timestamp
+              ? new Date(m.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "",
+          }));
+
+          setSessions((prev) =>
+            prev.map((s) => (s.id === sessId ? { ...s, messages: msgs } : s))
+          );
+        }
+      } catch (err) {
+        console.error("[Ask Tutor] Failed to load session messages:", err);
+      }
+    }
+  };
 
   const createNewSession = () => {
     const newSess: ChatSession = {
@@ -240,14 +443,15 @@ function AskTutorPage() {
       setSelectedSubjectId(subj.id);
       setSelectedSubjectName(subj.name);
       setSelectedSubjectCode(subj.code);
-      // Update subject in active session
       setSessions((prev) =>
-        prev.map((s) => (s.id === activeSessionId ? { ...s, subject: subj.name, subjectId: subj.id } : s))
+        prev.map((s) =>
+          s.id === activeSessionId ? { ...s, subject: subj.name, subjectId: subj.id } : s
+        )
       );
     }
   };
 
-  // ── Real API call ───────────────────────────────────────────────────────────
+  // ── Send question ───────────────────────────────────────────────────────────
   const handleSend = async (overrideQuery?: string) => {
     const q = (overrideQuery ?? input).trim();
     if (!q || isProcessing) return;
@@ -265,37 +469,43 @@ function AskTutorPage() {
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id !== activeSessionId) return s;
-        const newTitle = s.messages.length === 0 ? q.slice(0, 30) + (q.length > 30 ? "…" : "") : s.title;
+        const newTitle =
+          s.messages.length === 0 ? q.slice(0, 30) + (q.length > 30 ? "…" : "") : s.title;
         return { ...s, title: newTitle, messages: [...s.messages, userMsg] };
       })
     );
 
-    addQuery({ student: user?.name ?? "Student", subject: selectedSubjectName, question: q, createdAt: "Just now" });
+    addQuery({
+      student: user?.name ?? "Student",
+      subject: selectedSubjectName,
+      question: q,
+      createdAt: "Just now",
+    });
 
     setIsProcessing(true);
 
     let apiResp: ApiResponse | null = null;
+    const conversationIdToSend = activeSession.mongoId;
 
     try {
       const res = await fetch(`${API_BASE}/api/tutor/ask`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Send auth token — works for both real and simulated JWTs
           ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
-          // Graceful fallback headers for simulated JWT path
-          ...(user?.id    ? { "x-user-id":   user.id }          : {}),
-          ...(user?.role  ? { "x-user-role": user.role }        : {}),
+          ...(user?.id ? { "x-user-id": user.id } : {}),
+          ...(user?.role ? { "x-user-role": user.role } : {}),
         },
         body: JSON.stringify({
-          subjectId:   selectedSubjectId || undefined,
+          subjectId: selectedSubjectId || undefined,
           subjectCode: selectedSubjectCode || undefined,
-          question:    q,
+          question: q,
+          conversationId: conversationIdToSend,
         }),
       });
 
       if (res.ok) {
-        apiResp = await res.json() as ApiResponse;
+        apiResp = (await res.json()) as ApiResponse;
       } else {
         const errData = await res.json().catch(() => ({}));
         console.error("[Ask Tutor] API error:", res.status, errData);
@@ -304,29 +514,40 @@ function AskTutorPage() {
       console.error("[Ask Tutor] Fetch failed:", fetchErr);
     }
 
-    // Fallback if API is unreachable
     if (!apiResp) {
       apiResp = {
-        answer:    "The AI Tutor service is currently unreachable. Please make sure the Node backend (port 5000) and the Python RAG service (port 8001) are both running.",
+        answer:
+          "The AI Tutor service is currently unreachable. Please make sure the Node backend (port 5000) and the Python RAG service (port 8001) are both running.",
+        worked_example: null,
+        visual: null,
         escalated: true,
         confidence: 0,
-        sources:   [],
+        sources: [],
       };
     }
 
     const aiMsg: ChatMessage = {
-      id:         `msg_ai_${Date.now()}`,
-      role:       "ai",
-      text:       apiResp.answer,
-      timestamp:  new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      escalated:  apiResp.escalated,
+      id: `msg_ai_${Date.now()}`,
+      role: "ai",
+      text: apiResp.answer,
+      worked_example: apiResp.worked_example || null,
+      visual: apiResp.visual || null,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      escalated: apiResp.escalated,
       confidence: apiResp.confidence,
-      sources:    apiResp.sources ?? [],
-      provider:   apiResp.provider ?? null,
+      sources: apiResp.sources ?? [],
+      provider: apiResp.provider ?? null,
     };
 
     setSessions((prev) =>
-      prev.map((s) => (s.id === activeSessionId ? { ...s, messages: [...s.messages, aiMsg] } : s))
+      prev.map((s) => {
+        if (s.id !== activeSessionId) return s;
+        return {
+          ...s,
+          mongoId: apiResp?.conversationId || s.mongoId,
+          messages: [...s.messages, aiMsg],
+        };
+      })
     );
     setIsProcessing(false);
   };
@@ -334,8 +555,8 @@ function AskTutorPage() {
   return (
     <div>
       <PageHeader
-        title="AI Tutor — Ask Your Course Material"
-        subtitle="Answers are grounded exclusively in faculty-approved course documents, retrieved via semantic search."
+        title="AI Tutor — Adaptive & Visually Explaining"
+        subtitle="Multi-turn conversation memory, topic mastery adaptivity, worked examples, and interactive diagrams."
         action={
           <button
             type="button"
@@ -374,8 +595,8 @@ function AskTutorPage() {
             </div>
             <div className="flex flex-col justify-end">
               <p className="text-xs text-muted-foreground rounded-xl border border-border bg-card px-3 py-2">
-                <span className="font-semibold text-violet">RAG mode:</span> Semantic vector search
-                (ChromaDB + sentence-transformers) → Gemini LLM → Groq fallback
+                <span className="font-semibold text-violet">RAG Engine:</span> ChromaDB + MiniLM →
+                Gemini/Groq → MongoDB Conversation Memory & Structured Output
               </p>
             </div>
           </div>
@@ -388,7 +609,9 @@ function AskTutorPage() {
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <History className="h-3.5 w-3.5" /> Conversations
-              <span className="ml-1 rounded-full bg-violet/10 px-1.5 py-0.5 text-violet font-bold">{sessions.length}</span>
+              <span className="ml-1 rounded-full bg-violet/10 px-1.5 py-0.5 text-violet font-bold">
+                {sessions.length}
+              </span>
             </span>
             <button
               type="button"
@@ -404,7 +627,7 @@ function AskTutorPage() {
               return (
                 <motion.div
                   key={s.id}
-                  onClick={() => setActiveSessionId(s.id)}
+                  onClick={() => handleSelectSession(s.id)}
                   whileHover={{ x: 2 }}
                   className={cn(
                     "group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 transition text-xs",
@@ -415,7 +638,12 @@ function AskTutorPage() {
                 >
                   <div className="min-w-0 pr-2">
                     <div className="truncate font-semibold">{s.title || "Untitled chat"}</div>
-                    <div className={cn("text-[11px] truncate mt-0.5", active ? "text-violet-200 opacity-80" : "text-muted-foreground")}>
+                    <div
+                      className={cn(
+                        "text-[11px] truncate mt-0.5",
+                        active ? "text-violet-200 opacity-80" : "text-muted-foreground"
+                      )}
+                    >
                       {s.subject} · {s.messages.length} msgs
                     </div>
                   </div>
@@ -424,7 +652,9 @@ function AskTutorPage() {
                     onClick={(e) => deleteSession(s.id, e)}
                     className={cn(
                       "opacity-0 group-hover:opacity-100 transition p-1 rounded",
-                      active ? "hover:bg-white/20 text-white" : "hover:text-danger text-muted-foreground"
+                      active
+                        ? "hover:bg-white/20 text-white"
+                        : "hover:text-danger text-muted-foreground"
                     )}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -458,7 +688,7 @@ function AskTutorPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="rounded-full bg-violet/10 px-2.5 py-1 text-violet font-semibold">
-                    RAG · Semantic Search ({selectedSubjectCode})
+                    Adaptive Conversational RAG ({selectedSubjectCode})
                   </span>
                 </div>
               </div>
@@ -473,10 +703,12 @@ function AskTutorPage() {
                     >
                       <Sparkles className="h-8 w-8" />
                     </motion.div>
-                    <div className="font-serif text-2xl font-bold text-foreground">Ask the AI Tutor</div>
+                    <div className="font-serif text-2xl font-bold text-foreground">
+                      Ask the AI Tutor
+                    </div>
                     <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                      Answers are generated exclusively from faculty-approved course materials.
-                      Low-confidence questions are automatically escalated to your faculty.
+                      Ask questions, view worked examples, and explore interactive flowcharts,
+                      concept maps, and comparison charts grounded in course material.
                     </p>
                   </div>
                 ) : (
@@ -549,11 +781,11 @@ function ChatMessageBubble({
   msg: ChatMessage;
   onSourceClick: (s: SourceChip) => void;
 }) {
-  const [rated,          setRated]          = useState<"up" | "down" | null>(null);
+  const [rated, setRated] = useState<"up" | "down" | null>(null);
   const [showCommentBox, setShowCommentBox] = useState(false);
-  const [commentText,    setCommentText]    = useState("");
+  const [commentText, setCommentText] = useState("");
 
-  const isUser     = msg.role === "user";
+  const isUser = msg.role === "user";
   const isEscalated = msg.escalated === true;
 
   if (isUser) {
@@ -569,7 +801,9 @@ function ChatMessageBubble({
           style={{ boxShadow: "0 4px 16px -4px oklch(0.62 0.22 293 / 40%)" }}
         >
           <div className="leading-relaxed">{msg.text}</div>
-          <div className="mt-1 text-[10px] text-violet-200 text-right opacity-75">{msg.timestamp}</div>
+          <div className="mt-1 text-[10px] text-violet-200 text-right opacity-75">
+            {msg.timestamp}
+          </div>
         </div>
       </motion.div>
     );
@@ -582,7 +816,6 @@ function ChatMessageBubble({
       transition={{ duration: 0.2, ease: "easeOut" }}
       className="flex gap-3 max-w-3xl"
     >
-      {/* AI Avatar — amber for escalated, violet for normal */}
       <div
         className={cn(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 shadow-sm mt-1",
@@ -591,10 +824,11 @@ function ChatMessageBubble({
             : "bg-violet/15 ring-violet/25 shadow-[0_0_10px_-2px_oklch(0.62_0.22_293_/_30%)]"
         )}
       >
-        {isEscalated
-          ? <AlertTriangle className="h-4 w-4 text-amber-500" />
-          : <Sparkles      className="h-4 w-4 text-violet"    />
-        }
+        {isEscalated ? (
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+        ) : (
+          <Sparkles className="h-4 w-4 text-violet" />
+        )}
       </div>
 
       <div className="flex-1">
@@ -605,9 +839,10 @@ function ChatMessageBubble({
               ? "border-amber-500/20 bg-amber-500/5 chat-escalated-bubble"
               : "border-violet/15 bg-card chat-ai-bubble"
           )}
-          style={{ boxShadow: isEscalated
-            ? "0 2px 12px -4px rgba(245,158,11,0.15)"
-            : "0 2px 12px -4px rgba(0,0,0,0.15)"
+          style={{
+            boxShadow: isEscalated
+              ? "0 2px 12px -4px rgba(245,158,11,0.15)"
+              : "0 2px 12px -4px rgba(0,0,0,0.15)",
           }}
         >
           {/* Escalation badge */}
@@ -620,30 +855,49 @@ function ChatMessageBubble({
             </div>
           )}
 
-          {/* Confidence pill — only for grounded answers */}
+          {/* Confidence pill */}
           {!isEscalated && msg.confidence !== undefined && (
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground font-medium">Grounded answer</span>
-              <span className={cn(
-                "rounded-full px-2.5 py-0.5 font-bold text-[11px]",
-                msg.confidence >= 0.75
-                  ? "bg-success/10 text-success"
-                  : msg.confidence >= 0.55
-                  ? "bg-violet/10 text-violet"
-                  : "bg-gold/10 text-gold"
-              )}>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 font-bold text-[11px]",
+                  msg.confidence >= 0.75
+                    ? "bg-success/10 text-success"
+                    : msg.confidence >= 0.55
+                    ? "bg-violet/10 text-violet"
+                    : "bg-gold/10 text-gold"
+                )}
+              >
                 Confidence: {Math.round(msg.confidence * 100)}%
               </span>
             </div>
           )}
 
-          {/* Answer text */}
-          <div className={cn(
-            "text-sm leading-relaxed whitespace-pre-line font-sans",
-            isEscalated ? "text-amber-900 dark:text-amber-100" : "text-foreground"
-          )}>
+          {/* Main Answer text */}
+          <div
+            className={cn(
+              "text-sm leading-relaxed whitespace-pre-line font-sans",
+              isEscalated ? "text-amber-900 dark:text-amber-100" : "text-foreground"
+            )}
+          >
             {msg.text}
           </div>
+
+          {/* Worked Example Block */}
+          {!isEscalated && msg.worked_example && (
+            <div className="rounded-xl border border-violet/20 bg-violet/5 p-4 my-3 space-y-1.5 text-xs shadow-sm">
+              <div className="flex items-center gap-1.5 font-bold text-violet uppercase tracking-wider text-[11px]">
+                <Code2 className="h-3.5 w-3.5" /> Worked Example
+              </div>
+              <div className="text-foreground/90 font-mono text-[12px] leading-relaxed whitespace-pre-wrap pl-3 border-l-2 border-violet/40">
+                {msg.worked_example}
+              </div>
+            </div>
+          )}
+
+          {/* Visual Diagram Block */}
+          {!isEscalated && msg.visual && <VisualRenderer visual={msg.visual} />}
 
           {/* Source citation chips */}
           {!isEscalated && msg.sources && msg.sources.length > 0 && (
@@ -666,7 +920,7 @@ function ChatMessageBubble({
             </div>
           )}
 
-          {/* Feedback row — only for non-escalated answers */}
+          {/* Feedback row */}
           {!isEscalated && (
             <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
@@ -685,7 +939,10 @@ function ChatMessageBubble({
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setRated("down"); setShowCommentBox(true); }}
+                  onClick={() => {
+                    setRated("down");
+                    setShowCommentBox(true);
+                  }}
                   className={cn(
                     "flex items-center gap-1 rounded-lg border px-2.5 py-1 transition",
                     rated === "down"
@@ -706,7 +963,10 @@ function ChatMessageBubble({
 
           {showCommentBox && (
             <form
-              onSubmit={(e) => { e.preventDefault(); setShowCommentBox(false); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                setShowCommentBox(false);
+              }}
               className="rounded-xl border border-danger/30 bg-danger/5 p-3 space-y-2 text-xs"
             >
               <div className="font-semibold text-foreground">What could be improved?</div>

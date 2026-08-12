@@ -69,7 +69,7 @@ function UsersPage() {
     return matchSearch && matchRole;
   });
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddError(null);
     if (!newName.trim() || !newEmail.trim()) return;
@@ -77,12 +77,12 @@ function UsersPage() {
     const actorEmail = adminUser?.email ?? "admin@charusat.edu.in";
     const roleForStore = newRole === "Student" ? "student" : newRole === "Faculty" ? "faculty" : "admin";
 
-    // Create in auth store (sets default password + mustChangePassword)
-    const authResult = createUserWithDefaultPassword(newName.trim(), newEmail.trim(), roleForStore, actorEmail);
+    // Create directly in MongoDB Atlas via auth store & API
+    const authResult = await createUserWithDefaultPassword(newName.trim(), newEmail.trim(), roleForStore, actorEmail);
     if (!authResult.ok) { setAddError(authResult.error ?? "Failed to create account."); return; }
 
-    // Also add to app data context for the UI table
-    addUser({
+    // Also update local UI table
+    await addUser({
       name: newName.trim(),
       email: newEmail.trim().toLowerCase(),
       role: newRole,

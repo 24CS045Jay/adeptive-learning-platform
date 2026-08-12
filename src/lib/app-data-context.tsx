@@ -1,37 +1,21 @@
 /**
- * AppDataContext — reactive store with localStorage persistence for all mutable app data.
- *
- * Phase 7: AI Answer Feedback & Rich Notifications.
- * Phase 8: Student ML Risk Prediction & Research Metrics data store.
- * Phase 9: Security Hardening parameters.
+ * AppDataContext — reactive store synchronized with MongoDB Express API.
+ * No localStorage persistence or mock data fallbacks used at runtime.
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
-import {
-  documents as initialDocs,
-  subjects as initialSubjects,
-  learningModules as initialModules,
-  learningResources as initialResources,
-  users as initialUsers,
-  studentQueries as initialQueries,
-  escalations as initialEscalations,
-  announcements as initialAnnouncements,
-  quizzes as initialQuizzes,
-  weakTopics,
-  bookmarks as initialBookmarks,
-  topicVolume,
-  chatSources,
-  initialMultiModalChunks,
-  conceptNodes as initialNodes,
-  conceptEdges as initialEdges,
-  type MultiModalChunk,
-  type ConceptNode,
-  type ConceptEdge,
-} from "@/lib/mock-data";
 import type {
-  FileType, Difficulty, LearningModule, LearningResource,
+  FileType,
+  Difficulty,
+  LearningModule,
+  LearningResource,
+  MultiModalChunk,
+  ConceptNode,
+  ConceptEdge,
 } from "@/lib/mock-data";
 import { _setGlobalOnRegister } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
+import { API_BASE, fetchJson, authHeaders } from "@/lib/api";
 import { AUDIT_LOG, type AuditEntry, appendAudit } from "@/lib/auth-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -53,6 +37,7 @@ export interface AppDocument {
   status: DocStatus;
   chunks: number;
   priority: number;
+  ingestionStatus?: "pending" | "ok" | "failed";
 }
 
 export interface AppUser {
@@ -154,26 +139,6 @@ export interface StudentRiskProfile {
   weakTopicCount: number;
 }
 
-const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  { id: "n1", title: "Document Approved", message: "Your document 'BDA Unit 1 - MapReduce.pdf' was approved by Admin.", timestamp: "10m ago", read: false, type: "approval font-medium" as any },
-  { id: "n2", title: "New Quiz Published", message: "Dr. Nisha Shah published 'MapReduce Architecture Mastery'.", timestamp: "30m ago", read: false, type: "quiz" },
-  { id: "n3", title: "Daily Study Reminder", message: "Keep your 5-day study streak alive! Spend 15 mins reviewing Big Data notes.", timestamp: "2h ago", read: false, type: "reminder" },
-  { id: "n4", title: "Weekly Progress Summary", message: "Great job! Your quiz score accuracy improved by +12% this week.", timestamp: "1d ago", read: true, type: "progress" },
-];
-
-const INITIAL_FEEDBACK: AiFeedback[] = [
-  { id: "fb1", question: "How does MapReduce handle stragglers?", answer: "Speculative execution launches duplicate tasks on alternative nodes...", isThumbsUp: true, timestamp: "Today" },
-  { id: "fb2", question: "Explain bias variance tradeoff", answer: "Deeper trees fit training data tighter (lower bias) but increase variance...", isThumbsUp: true, timestamp: "Yesterday" },
-  { id: "fb3", question: "Difference between VM and Container", answer: "Containers share host kernel whereas VMs run full guest OS...", isThumbsUp: false, comment: "Needed more details on PID namespaces.", timestamp: "2 days ago" },
-];
-
-export const INITIAL_RISK_PROFILES: StudentRiskProfile[] = [
-  { studentId: "s101", studentName: "Aarav Patel", email: "student@charusat.edu.in", subject: "Big Data Analytics", trend: "Improving", risk: "Low", scorePct: 88, weakTopicCount: 1 },
-  { studentId: "s102", studentName: "Meera Joshi", email: "meera@charusat.edu.in", subject: "Machine Learning", trend: "Declining", risk: "High", scorePct: 58, weakTopicCount: 4 },
-  { studentId: "s103", studentName: "Kabir Singh", email: "kabir@charusat.edu.in", subject: "Big Data Analytics", trend: "Stable", risk: "Medium", scorePct: 72, weakTopicCount: 2 },
-  { studentId: "s104", studentName: "Sana Khan", email: "sana@charusat.edu.in", subject: "Machine Learning", trend: "Improving", risk: "Low", scorePct: 82, weakTopicCount: 1 },
-];
-
 // ─── Context Value Interface ──────────────────────────────────────────────────
 
 interface AppDataContextValue {
@@ -192,17 +157,18 @@ interface AppDataContextValue {
   multiModalChunks: MultiModalChunk[];
   conceptNodes:     ConceptNode[];
   conceptEdges:     ConceptEdge[];
-  quizzes:          typeof initialQuizzes;
-  weakTopics:       typeof weakTopics;
-  bookmarks:        typeof initialBookmarks;
-  topicVolume:      typeof topicVolume;
-  chatSources:      typeof chatSources;
+  quizzes:          any[];
+  weakTopics:       any[];
+  bookmarks:        any[];
+  topicVolume:      any[];
+  chatSources:      any[];
 
   // Document CRUD
-  addDocument:     (doc: Omit<AppDocument, "id" | "chunks" | "priority" | "status">) => void;
-  approveDocument: (id: string) => void;
-  rejectDocument:  (id: string) => void;
-  deleteDocument:  (id: string) => void;
+  uploadDocument:  (formData: FormData) => Promise<boolean>;
+  approveDocument: (id: string) => Promise<boolean>;
+  rejectDocument:  (id: string) => Promise<boolean>;
+  updateDocument:  (id: string, updates: Partial<Pick<AppDocument, "chunks" | "ingestionStatus" | "status">>) => void;
+  deleteDocument:  (id: string) => Promise<boolean>;
 
   // Feedback & Notifications
   addAiFeedback: (question: string, answer: string, isThumbsUp: boolean, comment?: string) => void;
@@ -251,65 +217,65 @@ interface AppDataContextValue {
   deleteAnnouncement: (id: string) => void;
 }
 
-// ─── LocalStorage Helpers ─────────────────────────────────────────────────────
+// ─── Backend Mappers ──────────────────────────────────────────────────────────
 
-function loadStorage<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const item = localStorage.getItem(`ai_tutor_${key}`);
-    if (item) return JSON.parse(item);
-  } catch {}
-  return fallback;
+function getFileTypeFromFileName(fileName: string): FileType {
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  if (ext === "pptx") return "pptx";
+  if (ext === "docx") return "docx";
+  return "pdf";
 }
 
-function saveStorage<T>(key: string, data: T) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(`ai_tutor_${key}`, JSON.stringify(data));
-  } catch {}
+function mapBackendSubject(subject: any): AppSubject {
+  return {
+    id: String(subject._id || subject.id),
+    name: subject.name,
+    code: subject.code,
+    semester: subject.semester,
+    faculty: subject.facultyId?.name ?? subject.faculty ?? "",
+    syllabus: subject.syllabus ?? "",
+    enrolledStudentIds: (subject.enrolledStudentIds || []).map((id: any) => String(id)),
+  };
 }
 
-function seedDocuments(): AppDocument[] {
-  return initialDocs.map((d) => ({
-    id: d.id,
-    name: d.name,
-    fileType: d.fileType,
-    subjectId: d.subjectId,
-    moduleId: d.moduleId ?? null,
-    topicTag: d.topicTag ?? "",
-    difficulty: d.difficulty,
-    semester: d.semester,
-    uploadedBy: d.uploadedBy === "Dr. Nisha Shah" ? "faculty@charusat.edu.in" : "priya@charusat.edu.in",
-    uploadedByName: d.uploadedBy,
-    uploadDate: d.uploadDate,
-    status: d.status as DocStatus,
-    chunks: d.chunks,
-    priority: d.priority,
-  }));
-}
-
-function seedUsers(): AppUser[] {
-  return initialUsers.map((u) => ({
-    id: u.id,
+function mapBackendUser(u: any): AppUser {
+  const roleMap: Record<string, "Student" | "Faculty" | "Admin"> = {
+    student: "Student",
+    faculty: "Faculty",
+    admin: "Admin",
+  };
+  const roleLabel = roleMap[String(u.role).toLowerCase()] ?? "Student";
+  return {
+    id: String(u._id || u.id),
     name: u.name,
     email: u.email,
-    role: u.role as AppUser["role"],
-    status: u.status as AppUser["status"],
-    joinedAt: "2026-07-01",
-    passwordStatus: "changed" as const, // seeded demo accounts are not in default-pw state
-  }));
+    role: roleLabel,
+    status: "active",
+    passwordStatus: "changed",
+    joinedAt: u.createdAt ? new Date(u.createdAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+  };
 }
 
-function seedSubjects(): AppSubject[] {
-  return initialSubjects.map((s) => ({
-    id: s.id,
-    name: s.name,
-    code: s.code,
-    semester: s.semester,
-    faculty: s.faculty,
-    syllabus: s.syllabus ?? "",
-    enrolledStudentIds: [...(s.enrolledStudentIds ?? [])],
-  }));
+function mapBackendDocument(doc: any): AppDocument {
+  const subjectId = typeof doc.subjectId === "object" ? String(doc.subjectId._id || doc.subjectId.id) : String(doc.subjectId);
+  const uploader = typeof doc.uploaderId === "object" ? doc.uploaderId : undefined;
+  return {
+    id: String(doc._id || doc.id),
+    name: doc.fileName,
+    fileType: doc.fileType ? doc.fileType : getFileTypeFromFileName(doc.fileName),
+    subjectId,
+    moduleId: doc.unit || doc.moduleId || null,
+    topicTag: doc.topicTag ?? "",
+    difficulty: doc.difficulty ?? "medium",
+    semester: doc.semester ?? (doc.subjectId?.semester ?? 1),
+    uploadedBy: uploader?.email ?? doc.uploadedBy ?? "faculty@charusat.edu.in",
+    uploadedByName: uploader?.name ?? doc.uploadedByName ?? uploader?.email ?? "Faculty",
+    uploadDate: doc.createdAt ? new Date(doc.createdAt).toISOString().split("T")[0] : (doc.uploadDate ?? new Date().toISOString().split("T")[0]),
+    status: doc.status ?? "pending",
+    chunks: doc.chunkCount ?? doc.chunks ?? 0,
+    priority: doc.priority ?? 0,
+    ingestionStatus: doc.ingestionStatus ?? "pending",
+  };
 }
 
 // ─── Provider Component ───────────────────────────────────────────────────────
@@ -317,91 +283,365 @@ function seedSubjects(): AppSubject[] {
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
-  const [documents, setDocuments] = useState<AppDocument[]>(() => loadStorage("documents", seedDocuments()));
-  const [subjects, setSubjects]   = useState<AppSubject[]>(() => loadStorage("subjects", seedSubjects()));
-  const [modules, setModules]     = useState<LearningModule[]>(() => loadStorage("modules", [...initialModules]));
-  const [resources, setResources] = useState<LearningResource[]>(() => loadStorage("resources", [...initialResources]));
-  const [users, setUsers]         = useState<AppUser[]>(() => loadStorage("users", seedUsers()));
-  const [queries, setQueries]     = useState<AppQuery[]>(() => loadStorage("queries", [...initialQueries]));
-  const [escalations, setEscalations] = useState<AppEscalation[]>(() => loadStorage("escalations", [...initialEscalations] as AppEscalation[]));
-  const [announcements, setAnnouncements] = useState<AppAnnouncement[]>(() => loadStorage("announcements", [...initialAnnouncements]));
-  const [notifications, setNotifications] = useState<AppNotification[]>(() => loadStorage("notifications", INITIAL_NOTIFICATIONS));
-  const [discussions, setDiscussions]     = useState<DiscussionPost[]>(() => loadStorage("discussions", []));
-  const [aiFeedback, setAiFeedback]       = useState<AiFeedback[]>(() => loadStorage("ai_feedback", INITIAL_FEEDBACK));
-  const [riskProfiles]                     = useState<StudentRiskProfile[]>(INITIAL_RISK_PROFILES);
-  const [multiModalChunks, setMultiModalChunks] = useState<MultiModalChunk[]>(() => loadStorage("multimodal_chunks", [...initialMultiModalChunks]));
-  const [conceptNodes] = useState<ConceptNode[]>([...initialNodes]);
-  const [conceptEdges] = useState<ConceptEdge[]>([...initialEdges]);
+  const { user } = useAuth();
 
-  useEffect(() => saveStorage("documents", documents), [documents]);
-  useEffect(() => saveStorage("subjects", subjects), [subjects]);
-  useEffect(() => saveStorage("modules", modules), [modules]);
-  useEffect(() => saveStorage("resources", resources), [resources]);
-  useEffect(() => saveStorage("users", users), [users]);
-  useEffect(() => saveStorage("queries", queries), [queries]);
-  useEffect(() => saveStorage("escalations", escalations), [escalations]);
-  useEffect(() => saveStorage("announcements", announcements), [announcements]);
-  useEffect(() => saveStorage("notifications", notifications), [notifications]);
-  useEffect(() => saveStorage("ai_feedback", aiFeedback), [aiFeedback]);
-  useEffect(() => saveStorage("multimodal_chunks", multiModalChunks), [multiModalChunks]);
+  const [documents, setDocuments]               = useState<AppDocument[]>([]);
+  const [subjects, setSubjects]                 = useState<AppSubject[]>([]);
+  const [modules, setModules]                   = useState<LearningModule[]>([]);
+  const [resources, setResources]               = useState<LearningResource[]>([]);
+  const [users, setUsers]                       = useState<AppUser[]>([]);
+  const [queries, setQueries]                   = useState<AppQuery[]>([]);
+  const [escalations, setEscalations]           = useState<AppEscalation[]>([]);
+  const [announcements, setAnnouncements]       = useState<AppAnnouncement[]>([]);
+  const [notifications, setNotifications]       = useState<AppNotification[]>([]);
+  const [discussions, setDiscussions]           = useState<DiscussionPost[]>([]);
+  const [aiFeedback, setAiFeedback]             = useState<AiFeedback[]>([]);
+  const [riskProfiles, setRiskProfiles]         = useState<StudentRiskProfile[]>([]);
+  const [multiModalChunks, setMultiModalChunks] = useState<MultiModalChunk[]>([]);
+  const [conceptNodes, setConceptNodes]         = useState<ConceptNode[]>([]);
+  const [conceptEdges, setConceptEdges]         = useState<ConceptEdge[]>([]);
+  const [quizzes, setQuizzes]                   = useState<any[]>([]);
 
-  useEffect(() => {
-    _setGlobalOnRegister((name, email, role) => {
-      const roleLabel = (role.charAt(0).toUpperCase() + role.slice(1)) as AppUser["role"];
-      setUsers((prev) => {
-        if (prev.some((u) => u.email.toLowerCase() === email.toLowerCase())) return prev;
-        return [...prev, { id: `u_${Date.now()}`, name, email, role: roleLabel, status: "active", joinedAt: new Date().toISOString().split("T")[0], passwordStatus: "changed" }];
+  // ── Refresh Functions ─────────────────────────────────────────────────────
+
+  const refreshDocuments = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const docsData = await fetchJson<any[]>(`/api/documents`, { headers: authHeaders(user.token) });
+      setDocuments(docsData.map(mapBackendDocument));
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshDocuments failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshSubjects = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const subjectsData = await fetchJson<any[]>(`/api/subjects`, { headers: authHeaders(user.token) });
+      setSubjects(subjectsData.map(mapBackendSubject));
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshSubjects failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshUsers = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const usersData = await fetchJson<any[]>(`/api/users`, { headers: authHeaders(user.token) });
+      setUsers(usersData.map(mapBackendUser));
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshUsers failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshModules = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<any[]>(`/api/modules`, { headers: authHeaders(user.token) });
+      setModules(data.map((m) => ({ ...m, id: String(m._id || m.id) })));
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshModules failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshResources = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<any[]>(`/api/resources`, { headers: authHeaders(user.token) });
+      setResources(data.map((r) => ({ ...r, id: String(r._id || r.id) })));
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshResources failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshEscalations = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<any[]>(`/api/escalations`, { headers: authHeaders(user.token) });
+      setEscalations(data);
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshEscalations failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshAnnouncements = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<any[]>(`/api/announcements`, { headers: authHeaders(user.token) });
+      setAnnouncements(data);
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshAnnouncements failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshNotifications = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<any[]>(`/api/notifications`, { headers: authHeaders(user.token) });
+      setNotifications(data);
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshNotifications failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshDiscussions = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<any[]>(`/api/discussions`, { headers: authHeaders(user.token) });
+      setDiscussions(data);
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshDiscussions failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshFeedback = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<any>(`/api/feedback`, { headers: authHeaders(user.token) });
+      if (Array.isArray(data.feedback)) {
+        setAiFeedback(data.feedback);
+      }
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshFeedback failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshRiskProfiles = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<StudentRiskProfile[]>(`/api/analytics/risk-profiles`, { headers: authHeaders(user.token) });
+      setRiskProfiles(data);
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshRiskProfiles failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshConceptGraph = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<{ nodes: ConceptNode[]; edges: ConceptEdge[] }>(`/api/concept-graph`, { headers: authHeaders(user.token) });
+      setConceptNodes(data.nodes || []);
+      setConceptEdges(data.edges || []);
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshConceptGraph failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const refreshQuizzes = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const data = await fetchJson<any[]>(`/api/quizzes`, { headers: authHeaders(user.token) });
+      setQuizzes(data);
+      return true;
+    } catch (error) {
+      console.warn("[AppData] refreshQuizzes failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  // ── Document Operations ───────────────────────────────────────────────────
+
+  const uploadDocument = useCallback(async (formData: FormData) => {
+    if (!user?.token) return false;
+    try {
+      const res = await fetch(`${API_BASE}/api/documents/upload`, {
+        method: "POST",
+        headers: authHeaders(user.token),
+        body: formData,
       });
-    });
+
+      if (!res.ok) {
+        console.warn("[AppData] uploadDocument failed:", await res.text());
+        return false;
+      }
+
+      await refreshDocuments();
+      return true;
+    } catch (error) {
+      console.warn("[AppData] uploadDocument failed:", error);
+      return false;
+    }
+  }, [refreshDocuments, user?.token]);
+
+  const approveDocument = useCallback(async (id: string) => {
+    if (!user?.token) return false;
+    try {
+      const res = await fetch(`${API_BASE}/api/documents/${id}/approve`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+      });
+      if (!res.ok) return false;
+      await refreshDocuments();
+      return true;
+    } catch (error) {
+      console.warn("[AppData] approveDocument failed:", error);
+      return false;
+    }
+  }, [refreshDocuments, user?.token]);
+
+  const rejectDocument = useCallback(async (id: string) => {
+    if (!user?.token) return false;
+    try {
+      const res = await fetch(`${API_BASE}/api/documents/${id}/reject`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+      });
+      if (!res.ok) return false;
+      await refreshDocuments();
+      return true;
+    } catch (error) {
+      console.warn("[AppData] rejectDocument failed:", error);
+      return false;
+    }
+  }, [refreshDocuments, user?.token]);
+
+  const deleteDocument = useCallback(async (id: string) => {
+    if (!user?.token) return false;
+    try {
+      const res = await fetch(`${API_BASE}/api/documents/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+      });
+      if (!res.ok) return false;
+      setDocuments((prev) => prev.filter((d) => d.id !== id));
+      return true;
+    } catch (error) {
+      console.warn("[AppData] deleteDocument failed:", error);
+      return false;
+    }
+  }, [user?.token]);
+
+  const updateDocument = useCallback((id: string, updates: Partial<Pick<AppDocument, "chunks" | "ingestionStatus" | "status">>) => {
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
   }, []);
 
-  const addDocument = useCallback((doc: Omit<AppDocument, "id" | "chunks" | "priority" | "status">) => {
-    const newDoc: AppDocument = { ...doc, id: `d_${Date.now()}`, status: "pending", chunks: 0, priority: documents.length + 1 };
-    setDocuments((prev) => [newDoc, ...prev]);
-  }, [documents.length]);
+  // ── Feedback & Notifications Operations ───────────────────────────────────
 
-  const approveDocument = useCallback((id: string) => {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: "approved", chunks: Math.floor(Math.random() * 200) + 100 } : d)));
-  }, []);
+  const addAiFeedback = useCallback(async (question: string, answer: string, isThumbsUp: boolean, comment?: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify({ question, answer, isThumbsUp, comment }),
+      });
+      await refreshFeedback();
+    } catch (err) {
+      console.warn("[AppData] addAiFeedback failed:", err);
+    }
+  }, [refreshFeedback, user?.token]);
 
-  const rejectDocument = useCallback((id: string) => {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: "rejected" } : d)));
-  }, []);
+  const markNotificationsAsRead = useCallback(async () => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/notifications/read-all/read`, {
+        method: "PATCH",
+        headers: authHeaders(user.token),
+      });
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (err) {
+      console.warn("[AppData] markNotificationsAsRead failed:", err);
+    }
+  }, [user?.token]);
 
-  const deleteDocument = useCallback((id: string) => {
-    setDocuments((prev) => prev.filter((d) => d.id !== id));
-  }, []);
+  // ── Escalations Operations ────────────────────────────────────────────────
 
-  const addAiFeedback = useCallback((question: string, answer: string, isThumbsUp: boolean, comment?: string) => {
-    const newFb: AiFeedback = { id: `fb_${Date.now()}`, question, answer, isThumbsUp, comment, timestamp: "Just now" };
-    setAiFeedback((prev) => [newFb, ...prev]);
-  }, []);
+  const addEscalation = useCallback(async (question: string, subject: string, studentName: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/escalations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify({ question, subject }),
+      });
+      await refreshEscalations();
+    } catch (err) {
+      console.warn("[AppData] addEscalation failed:", err);
+    }
+  }, [refreshEscalations, user?.token]);
 
-  const markNotificationsAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
+  const resolveEscalation = useCallback(async (id: string, facultyAnswer: string, resolvedByName: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/escalations/${id}/resolve`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify({ facultyAnswer }),
+      });
+      await refreshEscalations();
+    } catch (err) {
+      console.warn("[AppData] resolveEscalation failed:", err);
+    }
+  }, [refreshEscalations, user?.token]);
 
-  const addEscalation = useCallback((question: string, subject: string, studentName: string) => {
-    const newEsc: AppEscalation = { id: `e_${Date.now()}`, student: studentName, subject, question, status: "open", escalatedAt: "Just now" };
-    setEscalations((prev) => [newEsc, ...prev]);
-  }, []);
+  // ── Discussions Operations ────────────────────────────────────────────────
 
-  const resolveEscalation = useCallback((id: string, facultyAnswer: string, resolvedByName: string) => {
-    setEscalations((prev) => prev.map((e) => (e.id === id ? { ...e, status: "resolved", facultyAnswer, resolvedBy: resolvedByName } : e)));
-  }, []);
+  const addDiscussionPost = useCallback(async (post: Omit<DiscussionPost, "id" | "upvotes" | "createdAt" | "answers">) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/discussions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify(post),
+      });
+      await refreshDiscussions();
+    } catch (err) {
+      console.warn("[AppData] addDiscussionPost failed:", err);
+    }
+  }, [refreshDiscussions, user?.token]);
 
-  const addDiscussionPost = useCallback((post: Omit<DiscussionPost, "id" | "upvotes" | "createdAt" | "answers">) => {
-    const newPost: DiscussionPost = { ...post, id: `p_${Date.now()}`, upvotes: 1, createdAt: "Just now", answers: [] };
-    setDiscussions((prev) => [newPost, ...prev]);
-  }, []);
+  const addDiscussionAnswer = useCallback(async (postId: string, content: string, author: string, authorRole: "Student" | "Faculty") => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/discussions/${postId}/answers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify({ content }),
+      });
+      await refreshDiscussions();
+    } catch (err) {
+      console.warn("[AppData] addDiscussionAnswer failed:", err);
+    }
+  }, [refreshDiscussions, user?.token]);
 
-  const addDiscussionAnswer = useCallback((postId: string, content: string, author: string, authorRole: "Student" | "Faculty") => {
-    setDiscussions((prev) => prev.map((p) => (p.id === postId ? { ...p, answers: [...p.answers, { id: `ans_${Date.now()}`, author, authorRole, content, createdAt: "Just now", isFacultyVerified: authorRole === "Faculty", upvotes: 1 }] } : p)));
-  }, []);
+  const upvotePost = useCallback(async (postId: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/discussions/${postId}/upvote`, {
+        method: "PATCH",
+        headers: authHeaders(user.token),
+      });
+      setDiscussions((prev) => prev.map((p) => (p.id === postId ? { ...p, upvotes: p.upvotes + 1 } : p)));
+    } catch (err) {
+      console.warn("[AppData] upvotePost failed:", err);
+    }
+  }, [user?.token]);
 
-  const upvotePost = useCallback((postId: string) => {
-    setDiscussions((prev) => prev.map((p) => (p.id === postId ? { ...p, upvotes: p.upvotes + 1 } : p)));
-  }, []);
+  // ── Chunk Operations ──────────────────────────────────────────────────────
 
   const updateChunkWeight = useCallback((chunkId: string, weight: number) => {
     setMultiModalChunks((prev) => prev.map((c) => (c.id === chunkId ? { ...c, weight } : c)));
@@ -415,21 +655,39 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setMultiModalChunks((prev) => [{ ...chunk, id: `mmc_${Date.now()}` }, ...prev]);
   }, []);
 
-  const addUser = useCallback((user: Omit<AppUser, "id" | "joinedAt">) => {
-    setUsers((prev) => [
-      ...prev,
-      {
-        ...user,
-        id: `u_${Date.now()}`,
-        joinedAt: new Date().toISOString().split("T")[0],
-        passwordStatus: (user.passwordStatus ?? "default") as AppUser["passwordStatus"],
-      },
-    ]);
-  }, []);
+  // ── User Operations ───────────────────────────────────────────────────────
 
-  const removeUser = useCallback((id: string) => {
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-  }, []);
+  const addUser = useCallback(async (newUser: Omit<AppUser, "id" | "joinedAt">) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          password: "password123",
+          role: newUser.role.toLowerCase(),
+        }),
+      });
+      await refreshUsers();
+    } catch (err) {
+      console.warn("[AppData] addUser failed:", err);
+    }
+  }, [refreshUsers, user?.token]);
+
+  const removeUser = useCallback(async (id: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/users/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: authHeaders(user.token),
+      });
+      await refreshUsers();
+    } catch (err) {
+      console.warn("[AppData] removeUser failed:", err);
+    }
+  }, [refreshUsers, user?.token]);
 
   const toggleUserStatus = useCallback((id: string) => {
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u)));
@@ -437,9 +695,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const markPasswordChanged = useCallback((email: string) => {
     setUsers((prev) =>
-      prev.map((u) =>
-        u.email.toLowerCase() === email.toLowerCase() ? { ...u, passwordStatus: "changed" as const } : u
-      )
+      prev.map((u) => (u.email.toLowerCase() === email.toLowerCase() ? { ...u, passwordStatus: "changed" as const } : u))
     );
   }, []);
 
@@ -447,53 +703,214 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     appendAudit(actor, action, target);
   }, []);
 
-  const addSubject = useCallback((subj: Omit<AppSubject, "id" | "enrolledStudentIds">) => {
-    setSubjects((prev) => [...prev, { ...subj, id: `s_${Date.now()}`, enrolledStudentIds: [] }]);
-  }, []);
+  // ── Subject Operations ────────────────────────────────────────────────────
 
-  const deleteSubject = useCallback((id: string) => {
-    setSubjects((prev) => prev.filter((s) => s.id !== id));
-  }, []);
+  const addSubject = useCallback(async (subj: Omit<AppSubject, "id" | "enrolledStudentIds">) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/subjects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify(subj),
+      });
+      await refreshSubjects();
+    } catch (err) {
+      console.warn("[AppData] addSubject failed:", err);
+    }
+  }, [refreshSubjects, user?.token]);
 
-  const updateSyllabus = useCallback((subjectId: string, syllabus: string) => {
-    setSubjects((prev) => prev.map((s) => (s.id === subjectId ? { ...s, syllabus } : s)));
-  }, []);
+  const deleteSubject = useCallback(async (id: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/subjects/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: authHeaders(user.token),
+      });
+      await refreshSubjects();
+    } catch (err) {
+      console.warn("[AppData] deleteSubject failed:", err);
+    }
+  }, [refreshSubjects, user?.token]);
 
-  const addModule = useCallback((mod: Omit<LearningModule, "id">) => {
-    setModules((prev) => [...prev, { ...mod, id: `m_${Date.now()}` }]);
-  }, []);
+  const updateSyllabus = useCallback(async (subjectId: string, syllabus: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/subjects/${encodeURIComponent(subjectId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify({ syllabus }),
+      });
+      await refreshSubjects();
+    } catch (err) {
+      console.warn("[AppData] updateSyllabus failed:", err);
+    }
+  }, [refreshSubjects, user?.token]);
 
-  const removeModule = useCallback((id: string) => {
-    setModules((prev) => prev.filter((m) => m.id !== id));
-  }, []);
+  // ── Module & Resource Operations ──────────────────────────────────────────
 
-  const addResource = useCallback((res: Omit<LearningResource, "id">) => {
-    setResources((prev) => [...prev, { ...res, id: `r_${Date.now()}` }]);
-  }, []);
+  const addModule = useCallback(async (mod: Omit<LearningModule, "id">) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/modules`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify(mod),
+      });
+      await refreshModules();
+    } catch (err) {
+      console.warn("[AppData] addModule failed:", err);
+    }
+  }, [refreshModules, user?.token]);
 
-  const removeResource = useCallback((id: string) => {
-    setResources((prev) => prev.filter((r) => r.id !== id));
-  }, []);
+  const removeModule = useCallback(async (id: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/modules/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(user.token),
+      });
+      await refreshModules();
+    } catch (err) {
+      console.warn("[AppData] removeModule failed:", err);
+    }
+  }, [refreshModules, user?.token]);
 
-  const enrollStudent = useCallback((subjectId: string, userId: string) => {
-    setSubjects((prev) => prev.map((s) => (s.id === subjectId && !s.enrolledStudentIds.includes(userId) ? { ...s, enrolledStudentIds: [...s.enrolledStudentIds, userId] } : s)));
-  }, []);
+  const addResource = useCallback(async (res: Omit<LearningResource, "id">) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/resources`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify(res),
+      });
+      await refreshResources();
+    } catch (err) {
+      console.warn("[AppData] addResource failed:", err);
+    }
+  }, [refreshResources, user?.token]);
 
-  const unenrollStudent = useCallback((subjectId: string, userId: string) => {
-    setSubjects((prev) => prev.map((s) => (s.id === subjectId ? { ...s, enrolledStudentIds: s.enrolledStudentIds.filter((id) => id !== userId) } : s)));
-  }, []);
+  const removeResource = useCallback(async (id: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/resources/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(user.token),
+      });
+      await refreshResources();
+    } catch (err) {
+      console.warn("[AppData] removeResource failed:", err);
+    }
+  }, [refreshResources, user?.token]);
+
+  const enrollStudent = useCallback(async (subjectId: string, userId: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/subjects/${encodeURIComponent(subjectId)}/enroll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify({ userId }),
+      });
+      await refreshSubjects();
+    } catch (err) {
+      console.warn("[AppData] enrollStudent failed:", err);
+    }
+  }, [refreshSubjects, user?.token]);
+
+  const unenrollStudent = useCallback(async (subjectId: string, userId: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/subjects/${encodeURIComponent(subjectId)}/unenroll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify({ userId }),
+      });
+      await refreshSubjects();
+    } catch (err) {
+      console.warn("[AppData] unenrollStudent failed:", err);
+    }
+  }, [refreshSubjects, user?.token]);
 
   const addQuery = useCallback((q: Omit<AppQuery, "id">) => {
     setQueries((prev) => [{ ...q, id: `q_${Date.now()}` }, ...prev]);
   }, []);
 
-  const addAnnouncement = useCallback((a: Omit<AppAnnouncement, "id" | "createdAt">) => {
-    setAnnouncements((prev) => [{ ...a, id: `a_${Date.now()}`, createdAt: "Just now" }, ...prev]);
-  }, []);
+  const addAnnouncement = useCallback(async (a: Omit<AppAnnouncement, "id" | "createdAt">) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/announcements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(user.token) },
+        body: JSON.stringify(a),
+      });
+      await refreshAnnouncements();
+    } catch (err) {
+      console.warn("[AppData] addAnnouncement failed:", err);
+    }
+  }, [refreshAnnouncements, user?.token]);
 
-  const deleteAnnouncement = useCallback((id: string) => {
-    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-  }, []);
+  const deleteAnnouncement = useCallback(async (id: string) => {
+    if (!user?.token) return;
+    try {
+      await fetch(`${API_BASE}/api/announcements/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(user.token),
+      });
+      await refreshAnnouncements();
+    } catch (err) {
+      console.warn("[AppData] deleteAnnouncement failed:", err);
+    }
+  }, [refreshAnnouncements, user?.token]);
+
+  // ── Global Mount & Token Effect ───────────────────────────────────────────
+
+  useEffect(() => {
+    if (!user?.token) return;
+
+    let active = true;
+    const loadAllBackendData = async () => {
+      await Promise.all([
+        refreshSubjects(),
+        refreshDocuments(),
+        refreshUsers(),
+        refreshModules(),
+        refreshResources(),
+        refreshEscalations(),
+        refreshAnnouncements(),
+        refreshNotifications(),
+        refreshDiscussions(),
+        refreshFeedback(),
+        refreshRiskProfiles(),
+        refreshConceptGraph(),
+        refreshQuizzes(),
+      ]);
+      if (!active) return;
+    };
+    loadAllBackendData();
+    return () => {
+      active = false;
+    };
+  }, [
+    refreshAnnouncements,
+    refreshConceptGraph,
+    refreshDiscussions,
+    refreshDocuments,
+    refreshEscalations,
+    refreshFeedback,
+    refreshModules,
+    refreshNotifications,
+    refreshQuizzes,
+    refreshResources,
+    refreshRiskProfiles,
+    refreshSubjects,
+    refreshUsers,
+    user?.token,
+  ]);
+
+  useEffect(() => {
+    _setGlobalOnRegister((name, email, role) => {
+      refreshUsers();
+    });
+  }, [refreshUsers]);
 
   return (
     <AppDataContext.Provider
@@ -513,14 +930,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         multiModalChunks,
         conceptNodes,
         conceptEdges,
-        quizzes: initialQuizzes,
-        weakTopics,
-        bookmarks: initialBookmarks,
-        topicVolume,
-        chatSources,
-        addDocument,
+        quizzes,
+        weakTopics: [],
+        bookmarks: [],
+        topicVolume: [],
+        chatSources: [],
+        uploadDocument,
         approveDocument,
         rejectDocument,
+        updateDocument,
         deleteDocument,
         addAiFeedback,
         markNotificationsAsRead,

@@ -34,9 +34,35 @@ const DIFFICULTY_PILL: Record<Difficulty, string> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function KnowledgeBase() {
-  const { documents, subjects, modules: learningModules, deleteDocument } = useAppData();
+  const { documents, subjects, modules: learningModules, deleteDocument, updateDocument } = useAppData();
   const [subjectFilter, setSubjectFilter]       = useState("all");
   const [statusFilter, setStatusFilter]         = useState("all");
+  const [reindexingId, setReindexingId]         = useState<string | null>(null);
+  const API_BASE = "http://localhost:5000";
+
+  const handleReindex = async (id: string) => {
+    setReindexingId(id);
+    try {
+      const res = await fetch(`${API_BASE}/api/documents/${id}/reingest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || `Re-index request failed with status ${res.status}`);
+      }
+      const { document: updatedDoc } = await res.json();
+      updateDocument(id, {
+        chunks: updatedDoc.chunkCount ?? 0,
+        ingestionStatus: updatedDoc.ingestionStatus ?? "failed",
+        status: updatedDoc.status ?? "approved",
+      });
+    } catch (err) {
+      console.warn("[Admin Knowledge] Re-index failed:", err);
+    } finally {
+      setReindexingId(null);
+    }
+  };
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [fileTypeFilter, setFileTypeFilter]     = useState("all");
   const [showFilters, setShowFilters]           = useState(false);
@@ -225,10 +251,30 @@ function KnowledgeBase() {
                     <td className="py-3 pr-4 text-muted-foreground">{d.semester}</td>
                     <td className="py-3 pr-4 text-muted-foreground whitespace-nowrap text-xs">{d.uploadedByName ?? d.uploadedBy}</td>
                     <td className="py-3 pr-4 text-xs text-muted-foreground whitespace-nowrap">{d.uploadDate}</td>
-                    <td className="py-3 pr-4"><Pill tone={statusTone(d.status)}>{d.status}</Pill></td>
+                    <td className="py-3 pr-4 space-y-1">
+                      <Pill tone={statusTone(d.status)}>{d.status}</Pill>
+                      {d.status === "approved" && (d.ingestionStatus === "failed" || d.chunks === 0) ? (
+                        <Pill tone={d.ingestionStatus === "failed" ? "amber" : "danger"}>
+                          {d.ingestionStatus === "failed" ? "Ingestion Failed" : "Zero Chunks"}
+                        </Pill>
+                      ) : null}
+                    </td>
                     <td className="py-3 pr-4 text-muted-foreground">{d.chunks || "—"}</td>
                     <td className="py-3">
                       <div className="flex gap-2 text-muted-foreground">
+                        {d.status === "approved" && (
+                          <button
+                            className={cn(
+                              "inline-flex h-9 w-9 items-center justify-center rounded-xl border bg-card p-0 transition hover:border-violet/50 hover:text-violet",
+                              reindexingId === d.id ? "opacity-50 cursor-wait" : ""
+                            )}
+                            title="Re-index document"
+                            onClick={() => handleReindex(d.id)}
+                            disabled={reindexingId === d.id}
+                          >
+                            <RefreshCcw className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           className="hover:text-violet transition"
                           title="Inspect & Rerank Chunks"

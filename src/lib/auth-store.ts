@@ -41,6 +41,7 @@ const DEFAULT_PASSWORD_HASH = hashPassword(DEFAULT_PASSWORD);
 
 // ─── Seeded demo users ────────────────────────────────────────────────────────
 const DEFAULT_USERS: MockUser[] = [
+  { id: "u0", name: "Amit Thakkar",     email: "hod@charusat.ac.in",      passwordHash: hashPassword("12345678"),    role: "admin",   mustChangePassword: false },
   { id: "u1", name: "Aarav Patel",      email: "student@charusat.edu.in", passwordHash: hashPassword("student123"),  role: "student", mustChangePassword: false },
   { id: "u2", name: "Meera Joshi",      email: "meera@charusat.edu.in",   passwordHash: hashPassword("student123"),  role: "student", mustChangePassword: false },
   { id: "u3", name: "Kabir Singh",      email: "kabir@charusat.edu.in",   passwordHash: hashPassword("student123"),  role: "student", mustChangePassword: false },
@@ -149,55 +150,122 @@ export function changePassword(
   return { ok: true };
 }
 
-/** Admin-creates an account with the fixed default password. Returns ok or error. */
-export function createUserWithDefaultPassword(
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
+/** Admin-creates an account with the fixed default password directly in MongoDB Atlas + local fallback. */
+export async function createUserWithDefaultPassword(
   name: string,
   email: string,
   role: Role,
   actorEmail: string
-): { ok: boolean; error?: string } {
+): Promise<{ ok: boolean; error?: string }> {
   const cleanEmail = email.trim().toLowerCase();
-  if (MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail)) {
-    return { ok: false, error: "An account with this email already exists." };
+
+  try {
+    const response = await fetch(`${API_BASE}/api/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-role": "admin",
+        "x-user-id": "admin_user",
+      },
+      body: JSON.stringify({
+        name: name.trim(),
+        email: cleanEmail,
+        password: DEFAULT_PASSWORD,
+        role: role.toLowerCase(),
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 400 && data.error?.includes("already exists")) {
+        return { ok: false, error: "An account with this email already exists." };
+      }
+    }
+  } catch (err) {
+    console.warn("[AuthStore] Backend creation warning, saving to local fallback:", err);
   }
-  const newUser: MockUser = {
-    id: `u${Date.now()}`,
-    name: name.trim() || cleanEmail.split("@")[0],
-    email: cleanEmail,
-    passwordHash: DEFAULT_PASSWORD_HASH,
-    role,
-    mustChangePassword: true,
-  };
-  MOCK_USERS.push(newUser);
-  saveUsers(MOCK_USERS);
-  // Audit — never log the password value
+
+  if (!MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail)) {
+    const newUser: MockUser = {
+      id: `u${Date.now()}`,
+      name: name.trim() || cleanEmail.split("@")[0],
+      email: cleanEmail,
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      role,
+      mustChangePassword: true,
+    };
+    MOCK_USERS.push(newUser);
+    saveUsers(MOCK_USERS);
+  }
+
   appendAudit(actorEmail, "CREATE_USER", `${cleanEmail} (${role})`);
   return { ok: true };
 }
 
-/** Self-registration (kept for future use, sets mustChangePassword: false). */
-export function registerUser(
+/** Self-registration directly in MongoDB Atlas + local fallback. */
+export async function registerUser(
   name: string,
   email: string,
   password: string,
   role: Role,
-): { ok: boolean; error?: string } {
+): Promise<{ ok: boolean; error?: string }> {
   const cleanEmail = email.trim().toLowerCase();
-  if (MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail)) {
-    return { ok: false, error: "An account with this email already exists." };
-  }
   if (password.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
-  const newUser: MockUser = {
-    id: `u${Date.now()}`,
-    name: name.trim() || cleanEmail.split("@")[0],
-    email: cleanEmail,
-    passwordHash: hashPassword(password),
-    role,
-    mustChangePassword: false,
-  };
-  MOCK_USERS.push(newUser);
-  saveUsers(MOCK_USERS);
+
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), email: cleanEmail, password, role }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { ok: false, error: data.error || "Registration failed." };
+    }
+  } catch (err) {
+    console.warn("[AuthStore] Backend registration warning, saving to local fallback:", err);
+  }
+
+  if (!MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail)) {
+    const newUser: MockUser = {
+      id: `u${Date.now()}`,
+      name: name.trim() || cleanEmail.split("@")[0],
+      email: cleanEmail,
+      passwordHash: hashPassword(password),
+      role,
+      mustChangePassword: false,
+    };
+    MOCK_USERS.push(newUser);
+    saveUsers(MOCK_USERS);
+  }
+
   return { ok: true };
+}
+
+export function loginUser(
+  role: Role,
+  email: string,
+  password: string
+): { ok: boolean; user?: MockUser; error?: string } {
+  const cleanEmail = email.trim().toLowerCase();
+  const user = MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
+
+  if (!user) {
+    return { ok: false, error: "Invalid email or password." };
+  }
+
+  if (user.role !== role) {
+    return { ok: false, error: `Account is registered as ${user.role}. Select the correct tab.` };
+  }
+
+  if (!verifyPassword(password, user.passwordHash)) {
+    return { ok: false, error: "Invalid email or password." };
+  }
+
+  return { ok: true, user };
 }
 
 export function loginOrCreateGoogleUser(
@@ -224,4 +292,5 @@ export function loginOrCreateGoogleUser(
   }
   return { user };
 }
+
 

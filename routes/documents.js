@@ -42,6 +42,96 @@ function handleUploadFile(req, res, next) {
   });
 }
 
+async function performDocumentIngestion(doc, actorId, action) {
+  const subjectCode = doc.subjectId?.code || "GENERAL";
+  const collectionName = `subject_${subjectCode}`;
+  let ingestionStatus = "failed";
+  let chunkCount = 0;
+
+  try {
+    const text = await extractText(doc.fileUrl, doc.fileName);
+    if (!text || !text.trim()) {
+      console.warn(`[Ingest] Document ${doc._id} (${doc.fileName}) produced empty text after extraction.`);
+    }
+
+    const ingestRes = await fetch(`${RAG_SERVICE_URL}/ingest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        documentId: String(doc._id),
+        subjectCode,
+        text: text || "",
+        metadata: {
+          subject: subjectCode,
+          uploadedAt: doc.createdAt?.toISOString() ?? new Date().toISOString(),
+          fileName: doc.fileName,
+        },
+      }),
+      signal: AbortSignal.timeout(120_000),
+    });
+
+    if (!ingestRes.ok) {
+      const errBody = await ingestRes.text();
+      throw new Error(`RAG service returned ${ingestRes.status}: ${errBody.slice(0, 300)}`);
+    }
+
+    const ingestData = await ingestRes.json();
+    chunkCount = ingestData.chunkCount ?? 0;
+    ingestionStatus = "ok";
+
+    if (chunkCount === 0) {
+      ingestionStatus = "failed";
+      console.warn(`[Ingest] Document ${doc._id} successfully reached RAG service but returned zero chunks.`);
+      await AuditLog.create({
+        actorId,
+        action: "INGEST_FAILED",
+        details: {
+          documentId: doc._id,
+          fileName: doc.fileName,
+          subjectCode,
+          error: "Zero chunks returned from RAG service",
+        },
+      });
+    }
+
+    console.log(`[Ingest] Document ${doc._id} ingested: ${chunkCount} chunks → ${collectionName}`);
+  } catch (ingestErr) {
+    ingestionStatus = "failed";
+    console.error(`[Ingest] Failed for document ${doc._id}:`, ingestErr.message);
+
+    await AuditLog.create({
+      actorId,
+      action: "INGEST_FAILED",
+      details: {
+        documentId: doc._id,
+        fileName: doc.fileName,
+        subjectCode,
+        error: ingestErr.message,
+      },
+    });
+  }
+
+  doc.chunkCount = chunkCount;
+  doc.chromaCollection = collectionName;
+  doc.ingestionStatus = ingestionStatus;
+  await doc.save();
+
+  await AuditLog.create({
+    actorId,
+    action,
+    details: {
+      documentId: doc._id,
+      fileName: doc.fileName,
+      status: doc.status,
+      ingestionStatus,
+      chunkCount,
+      collection: collectionName,
+    },
+  });
+
+  return { ingestionStatus, chunkCount, collectionName };
+}
+
 // GET /api/documents - List documents
 router.get("/", authenticate, async (req, res) => {
   try {
@@ -140,94 +230,39 @@ router.patch("/:id/approve", authenticate, requireRole("admin"), async (req, res
     const doc = await Document.findById(req.params.id).populate("subjectId", "name code");
     if (!doc) return res.status(404).json({ error: "Document not found." });
 
-    // Mark as approved first so it's visible regardless of ingestion outcome
     doc.status = "approved";
     await doc.save();
 
-    // ── Real RAG ingestion ──────────────────────────────────────────────────
-    let ingestionStatus = "failed";
-    let chunkCount = 0;
-    const subjectCode = doc.subjectId?.code || "GENERAL";
-    const collectionName = `subject_${subjectCode}`;
-
-    try {
-      // Step 1: Extract plain text from the file at Cloudinary URL
-      const text = await extractText(doc.fileUrl, doc.fileName);
-
-      if (!text || !text.trim()) {
-        console.warn(`[Ingest] Document ${doc._id} (${doc.fileName}) produced empty text after extraction.`);
-      }
-
-      // Step 2: Send to Python RAG service for chunking + embedding
-      const ingestRes = await fetch(`${RAG_SERVICE_URL}/ingest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          documentId: String(doc._id),
-          subjectCode,
-          text: text || "",
-          metadata: {
-            subject: subjectCode,
-            uploadedAt: doc.createdAt?.toISOString() ?? new Date().toISOString(),
-            fileName: doc.fileName,
-          },
-        }),
-        signal: AbortSignal.timeout(120_000), // 2 min timeout for large docs
-      });
-
-      if (!ingestRes.ok) {
-        const errBody = await ingestRes.text();
-        throw new Error(`RAG service returned ${ingestRes.status}: ${errBody.slice(0, 300)}`);
-      }
-
-      const ingestData = await ingestRes.json();
-      chunkCount = ingestData.chunkCount ?? 0;
-      ingestionStatus = "ok";
-
-      console.log(`[Ingest] Document ${doc._id} ingested: ${chunkCount} chunks → ${collectionName}`);
-    } catch (ingestErr) {
-      // Ingestion failed — document stays approved but flagged
-      ingestionStatus = "failed";
-      console.error(`[Ingest] Failed for document ${doc._id}:`, ingestErr.message);
-
-      await AuditLog.create({
-        actorId: req.user._id || req.user.id,
-        action: "INGEST_FAILED",
-        details: {
-          documentId: doc._id,
-          fileName: doc.fileName,
-          subjectCode,
-          error: ingestErr.message,
-        },
-      });
-    }
-
-    // Update document record with ingestion outcome
-    doc.chunkCount = chunkCount;
-    doc.chromaCollection = collectionName;
-    doc.ingestionStatus = ingestionStatus;
-    await doc.save();
-
-    await AuditLog.create({
-      actorId: req.user._id || req.user.id,
-      action: "APPROVE_DOCUMENT",
-      details: {
-        documentId: doc._id,
-        fileName: doc.fileName,
-        status: "approved",
-        ingestionStatus,
-        chunkCount,
-        collection: collectionName,
-      },
-    });
+    const ingestionResult = await performDocumentIngestion(doc, req.user._id || req.user.id, "APPROVE_DOCUMENT");
 
     return res.json({
-      message: `Document approved successfully. Ingestion: ${ingestionStatus}.`,
+      message: `Document approved successfully. Ingestion: ${ingestionResult.ingestionStatus}.`,
       document: doc,
     });
   } catch (error) {
     console.error("[Document Approve Error]:", error);
     return res.status(500).json({ error: "Failed to approve document." });
+  }
+});
+
+// POST /api/documents/:id/reingest - Admin only
+router.post("/:id/reingest", authenticate, requireRole("admin"), async (req, res) => {
+  try {
+    const doc = await Document.findById(req.params.id).populate("subjectId", "name code");
+    if (!doc) return res.status(404).json({ error: "Document not found." });
+    if (doc.status !== "approved") {
+      return res.status(400).json({ error: "Only approved documents can be re-ingested." });
+    }
+
+    const ingestionResult = await performDocumentIngestion(doc, req.user._id || req.user.id, "REINGEST_DOCUMENT");
+
+    return res.json({
+      message: `Document re-ingested successfully. Ingestion: ${ingestionResult.ingestionStatus}.`,
+      document: doc,
+    });
+  } catch (error) {
+    console.error("[Document Reingest Error]:", error);
+    return res.status(500).json({ error: "Failed to re-ingest document." });
   }
 });
 

@@ -22,17 +22,16 @@ export const Route = createFileRoute("/student/quizzes")({
 });
 
 function StudentQuizzesPage() {
-  const { subjects } = useAppData();
+  const { subjects, quizzes: contextQuizzes } = useAppData();
 
-  // Quizzes list state (persisted in localStorage)
-  const [quizzes, setQuizzes] = useState<Quiz[]>(() => {
-    if (typeof window === "undefined") return INITIAL_QUIZZES;
-    try {
-      const saved = localStorage.getItem("ai_tutor_quizzes");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_QUIZZES;
-  });
+  // Quizzes list state
+  const [quizzes, setQuizzes] = useState<Quiz[]>(INITIAL_QUIZZES);
+
+  useEffect(() => {
+    if (contextQuizzes && contextQuizzes.length > 0) {
+      setQuizzes(contextQuizzes);
+    }
+  }, [contextQuizzes]);
 
   const [leaderboard] = useState(INITIAL_LEADERBOARD);
   const [gamification, setGamification] = useState(DEFAULT_GAMIFICATION);
@@ -48,14 +47,6 @@ function StudentQuizzesPage() {
   const [userScore, setUserScore]           = useState<number>(0); // count of correct answers
   const [earnedXp, setEarnedXp]             = useState<number>(0);
   const [isCompleted, setIsCompleted]       = useState<boolean>(false);
-
-  // Sync quizzes to localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem("ai_tutor_quizzes", JSON.stringify(quizzes));
-    } catch {}
-  }, [quizzes]);
 
   const startQuiz = (q: Quiz) => {
     setActiveQuiz(q);
