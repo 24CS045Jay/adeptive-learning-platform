@@ -49,7 +49,7 @@ interface SelectedFile {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function UploadContent() {
-  const { subjects, modules: learningModules, addDocument } = useAppData();
+  const { subjects, modules: learningModules, uploadDocument } = useAppData();
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<SelectedFile | null>(null);
@@ -97,24 +97,28 @@ function UploadContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selected) { setFileError("Please select a file first."); return; }
+    if (!selected) {
+      setFileError("Please select a file first.");
+      return;
+    }
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    // Find the selected subject object
-    const subj = subjects.find(s => s.id === subjectId);
-    addDocument({
-      name: selected.file.name,
-      fileType: selected.fileType,
-      subjectId,
-      moduleId: moduleId || null,
-      topicTag,
-      difficulty,
-      semester: parseInt(semester, 10),
-      uploadedBy: user?.email ?? "faculty@charusat.edu.in",
-      uploadedByName: user?.name ?? "Dr. Nisha Shah",
-      uploadDate: new Date().toISOString().split("T")[0],
-    });
+    setFileError(null);
+
+    const formData = new FormData();
+    formData.append("file", selected.file);
+    formData.append("subjectId", subjectId);
+    if (moduleId) formData.append("unit", moduleId);
+    if (topicTag) formData.append("topicTag", topicTag);
+
+    const success = await uploadDocument(formData);
     setLoading(false);
+
+    if (!success) {
+      setFileError("Upload failed. Please try again or contact the administrator.");
+      return;
+    }
+
     setSubmitted(true);
     setSelected(null);
     setTopicTag("");

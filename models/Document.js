@@ -16,4 +16,7 @@ const documentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Compound index on subjectId and status for filtering documents by subject & status
+documentSchema.index({ subjectId: 1, status: 1 });
+
 export const Document = mongoose.models.Document || mongoose.model("Document", documentSchema);

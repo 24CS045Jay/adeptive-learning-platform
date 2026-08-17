@@ -54,7 +54,7 @@ const ROLES = [
   },
 ] as const;
 
-type ViewMode = "login" | "forgot";
+type ViewMode = "login" | "forgot" | "register";
 
 // ─── Ambient Particle Node ────────────────────────────────────────────────────
 
@@ -178,6 +178,11 @@ function LoginPage() {
     setPendingRole(role);
     setAnimating(true);
   }, [navigate]);
+
+  const handleRegisterSuccess = useCallback((role: Role) => {
+    setPendingRole(role);
+    setAnimating(true);
+  }, []);
 
   const handleAnimationComplete = useCallback(() => {
     setAnimating(false);
@@ -314,7 +319,23 @@ function LoginPage() {
                     <LoginForm
                       roleConfig={roleConfig}
                       onForgot={() => setView("forgot")}
+                      onRegister={() => setView("register")}
                       onLoginSuccess={handleLoginSuccess}
+                    />
+                  </motion.div>
+                )}
+                {view === "register" && (
+                  <motion.div
+                    key={`register-${activeRole}`}
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <RegisterForm
+                      roleConfig={roleConfig}
+                      onBack={() => setView("login")}
+                      onRegisterSuccess={handleRegisterSuccess}
                     />
                   </motion.div>
                 )}
@@ -590,10 +611,12 @@ function LoginPage() {
 function LoginForm({
   roleConfig,
   onForgot,
+  onRegister,
   onLoginSuccess,
 }: {
   roleConfig: (typeof ROLES)[number];
   onForgot: () => void;
+  onRegister: () => void;
   onLoginSuccess: (role: Role, mustChangePw: boolean) => void;
 }) {
   const { login, loginWithGoogle } = useAuth();
@@ -620,7 +643,7 @@ function LoginForm({
     setError(null);
     setLoading(true);
     await new Promise((r) => setTimeout(r, 380));
-    const result = login(roleConfig.key, email.trim(), password);
+    const result = await login(roleConfig.key, email.trim(), password);
     setLoading(false);
     if (!result.ok) { setError(result.error ?? "Login failed."); return; }
     onLoginSuccess(roleConfig.key, result.mustChangePassword ?? false);
@@ -747,6 +770,18 @@ function LoginForm({
           {loading ? "Signing in…" : "Login"}
         </motion.button>
       </form>
+
+      <div className="mt-5 text-center text-sm text-muted-foreground">
+        Don&apos;t have an account?{
+          " "}
+        <button
+          type="button"
+          onClick={onRegister}
+          className="font-medium text-violet hover:underline"
+        >
+          Create account
+        </button>
+      </div>
 
       <AnimatePresence>
         {showGoogleModal && (
@@ -899,6 +934,174 @@ function GoogleSignInModal({
           )}
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+// ─── Register Form ──────────────────────────────────────────────────────────
+
+function RegisterForm({
+  roleConfig,
+  onBack,
+  onRegisterSuccess,
+}: {
+  roleConfig: (typeof ROLES)[number];
+  onBack: () => void;
+  onRegisterSuccess: (role: Role) => void;
+}) {
+  const { register } = useAuth();
+  const id = useId();
+  const { isDark } = useTheme();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState<string>(roleConfig.placeholder.email);
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setName("");
+    setEmail(roleConfig.placeholder.email);
+    setPassword("");
+    setError(null);
+  }, [roleConfig.key]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 300));
+    const result = await register(name.trim(), email.trim(), password, roleConfig.key);
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error ?? "Registration failed.");
+      return;
+    }
+
+    onRegisterSuccess(roleConfig.key);
+  };
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center gap-3">
+        <button type="button" onClick={onBack} className="text-muted-foreground hover:text-foreground transition">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <div>
+          <h2 className="font-serif text-xl font-bold text-foreground">Create your account</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">Register as a {roleConfig.label.toLowerCase()} to access AI Tutor.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            id={`${id}-register-error`}
+            role="alert"
+            className="mb-5 flex items-start gap-2 rounded-full border border-danger/30 bg-danger/8 px-5 py-3 text-sm text-danger"
+          >
+            <span className="mt-0.5">⚠</span>
+            <span>{error}</span>
+          </motion.div>
+        )}
+
+        <div className="mb-4">
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              id={`${id}-name`}
+              type="text"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Full name"
+              required
+              className={cn(
+                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
+                "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
+                isDark ? "border-border" : "border-border"
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              id={`${id}-email`}
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address"
+              required
+              className={cn(
+                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
+                "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
+                isDark ? "border-border" : "border-border"
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="relative">
+            <Shield className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              id={`${id}-register-password`}
+              type={showPw ? "text" : "password"}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+              className={cn(
+                "w-full rounded-full border bg-background/60 pl-11 pr-11 py-3 text-sm text-foreground outline-none transition",
+                "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
+                isDark ? "border-border" : "border-border"
+              )}
+            />
+            <button
+              type="button"
+              aria-label={showPw ? "Hide password" : "Show password"}
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
+            >
+              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <motion.button
+          type="submit"
+          disabled={loading}
+          whileTap={{ scale: 0.97 }}
+          whileHover={{ boxShadow: "0 0 24px -4px oklch(0.62 0.22 293 / 60%)" }}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white shadow-md transition disabled:opacity-60",
+            "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]"
+          )}
+        >
+          {loading ? "Creating account…" : `Sign up as ${roleConfig.label}`}
+        </motion.button>
+
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          Already have an account?{
+            " "}
+          <button
+            type="button"
+            onClick={onBack}
+            className="font-medium text-violet hover:underline"
+          >
+            Sign in
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

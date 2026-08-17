@@ -1,13 +1,16 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type { Role } from "./mock-data";
 import {
-  MOCK_USERS,
   requestPasswordReset,
   changePassword as storeCPw,
-  registerUser as storeRegister,
   verifyPassword,
   loginOrCreateGoogleUser,
+  loginUser,
+  registerUser,
+  MOCK_USERS,
 } from "./auth-store";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 export interface AuthUser {
   id: string;
@@ -26,13 +29,13 @@ interface LoginResult {
 
 interface AuthContextValue {
   user: AuthUser | null;
-  login: (role: Role, email: string, password: string) => LoginResult;
+  login: (role: Role, email: string, password: string) => Promise<LoginResult>;
   loginWithGoogle: (role: Role, email?: string, name?: string) => LoginResult;
   logout: () => void;
   sendPasswordReset: (email: string) => { ok: boolean; error?: string };
   changePassword: (currentPw: string, newPw: string) => { ok: boolean; error?: string };
   clearMustChangePw: () => void;
-  register: (name: string, email: string, password: string, role: Role) => { ok: boolean; error?: string };
+  register: (name: string, email: string, password: string, role: Role) => Promise<LoginResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -114,28 +117,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persistUser(u);
   };
 
-  const login = useCallback((role: Role, email: string, password: string): LoginResult => {
-    const cleanEmail = email.trim().toLowerCase();
-    const account = MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
-    if (!account) return { ok: false, error: "No account found with this email." };
-    if (!verifyPassword(password, account.passwordHash)) return { ok: false, error: "Incorrect password." };
-    if (account.role !== role) {
-      const roleLabel = account.role.charAt(0).toUpperCase() + account.role.slice(1);
-      return {
-        ok: false,
-        error: `This account is registered as a ${roleLabel}. Please select the ${roleLabel} tab to sign in.`,
+  const login = useCallback(async (role: Role, email: string, password: string): Promise<LoginResult> => {
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, email: email.trim().toLowerCase(), password }),
+      });
+
+      const text = await response.text();
+      let data: any;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        return {
+          ok: false,
+          error: `Login failed: unexpected response from auth server (${response.status}).`,
+        };
+      }
+      if (!response.ok) {
+        return { ok: false, error: data.error || "Invalid email or password." };
+      }
+
+      const authUser: AuthUser = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        token: data.token,
+        mustChangePassword: false,
       };
+
+      saveActiveUser(authUser);
+      return { ok: true, mustChangePassword: false };
+    } catch (error) {
+      console.warn("[Auth] Server fetch failed. Using local offline auth fallback:", error);
+      const localResult = loginUser(role, email, password);
+      if (localResult.ok && localResult.user) {
+        const authUser: AuthUser = {
+          id: localResult.user.id,
+          name: localResult.user.name,
+          email: localResult.user.email,
+          role: localResult.user.role,
+          token: `local_fallback_token_${Date.now()}_${localResult.user.id}`,
+          mustChangePassword: localResult.user.mustChangePassword,
+        };
+        saveActiveUser(authUser);
+        return { ok: true, mustChangePassword: localResult.user.mustChangePassword };
+      }
+      return { ok: false, error: localResult.error || "Invalid email or password." };
     }
-    const authUser: AuthUser = {
-      id: account.id,
-      name: account.name,
-      email: account.email,
-      role: account.role,
-      token: `jwt_simulated_${Date.now()}_${account.id}`,
-      mustChangePassword: account.mustChangePassword ?? false,
-    };
-    saveActiveUser(authUser);
-    return { ok: true, mustChangePassword: account.mustChangePassword ?? false };
   }, []);
 
   const loginWithGoogle = useCallback((role: Role, customEmail?: string, customName?: string): LoginResult => {
@@ -185,26 +216,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    (name: string, email: string, password: string, role: Role) => {
-      const result = storeRegister(name, email, password, role);
-      if (result.ok) {
+    async (name: string, email: string, password: string, role: Role): Promise<LoginResult> => {
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), password, role }),
+        });
+
+        const text = await response.text();
+        let data: any;
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          return {
+            ok: false,
+            error: `Registration failed: unexpected response from auth server (${response.status}).`,
+          };
+        }
+
+        if (!response.ok) {
+          return { ok: false, error: data.error || "Registration failed." };
+        }
+
+        const authUser: AuthUser = {
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          token: data.token,
+          mustChangePassword: false,
+        };
+        saveActiveUser(authUser);
+
         if (_onRegisterCallback) {
-          _onRegisterCallback(name || email.split("@")[0], email.trim().toLowerCase(), role);
+          _onRegisterCallback(authUser.name, authUser.email, authUser.role);
         }
-        const cleanEmail = email.trim().toLowerCase();
-        const account = MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
-        if (account) {
-          saveActiveUser({
-            id: account.id,
-            name: account.name,
-            email: account.email,
-            role: account.role,
-            token: `jwt_simulated_${Date.now()}`,
+
+        return { ok: true, mustChangePassword: false };
+      } catch (error) {
+        console.warn("[Auth] Backend unreachable, using local store fallback for registration:", error);
+        const localResult = await registerUser(name, email, password, role);
+        if (localResult.ok) {
+          const cleanEmail = email.trim().toLowerCase();
+          const found = MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
+          const authUser: AuthUser = {
+            id: found?.id || `u_${Date.now()}`,
+            name: name.trim() || cleanEmail.split("@")[0],
+            email: cleanEmail,
+            role,
+            token: `local_fallback_token_${Date.now()}`,
             mustChangePassword: false,
-          });
+          };
+          saveActiveUser(authUser);
+
+          if (_onRegisterCallback) {
+            _onRegisterCallback(authUser.name, authUser.email, authUser.role);
+          }
+
+          return { ok: true, mustChangePassword: false };
         }
+        return { ok: false, error: localResult.error || "Registration failed." };
       }
-      return result;
     },
     [],
   );

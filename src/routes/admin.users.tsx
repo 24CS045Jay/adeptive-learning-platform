@@ -13,9 +13,9 @@ export const Route = createFileRoute("/admin/users")({
 });
 
 const ROLE_COLORS: Record<string, { text: string; bg: string; ring: string }> = {
-  Student: { text: "text-violet",      bg: "bg-violet/10",       ring: "avatar-ring-violet" },
-  Faculty: { text: "text-gold",        bg: "bg-gold/10",         ring: "avatar-ring-gold" },
-  Admin:   { text: "text-teal-brand",  bg: "bg-teal-brand/10",   ring: "avatar-ring-teal" },
+  Student: { text: "text-violet", bg: "bg-violet/10", ring: "avatar-ring-violet" },
+  Faculty: { text: "text-gold", bg: "bg-gold/10", ring: "avatar-ring-gold" },
+  Admin: { text: "text-teal-brand", bg: "bg-teal-brand/10", ring: "avatar-ring-teal" },
 };
 
 // ── Confirmation Toast ────────────────────────────────────────────────────────
@@ -53,14 +53,14 @@ function UsersPage() {
   const { users, addUser, removeUser, toggleUserStatus } = useAppData();
   const { user: adminUser } = useAuth();
 
-  const [search, setSearch]         = useState("");
+  const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [showAdd, setShowAdd]       = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [toastEmail, setToastEmail] = useState<string | null>(null);
 
-  const [newName,  setNewName]  = useState("");
+  const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newRole,  setNewRole]  = useState<"Student" | "Faculty" | "Admin">("Student");
+  const [newRole, setNewRole] = useState<"Student" | "Faculty" | "Admin">("Student");
   const [addError, setAddError] = useState<string | null>(null);
 
   const filtered = users.filter((u) => {
@@ -69,7 +69,7 @@ function UsersPage() {
     return matchSearch && matchRole;
   });
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddError(null);
     if (!newName.trim() || !newEmail.trim()) return;
@@ -77,12 +77,12 @@ function UsersPage() {
     const actorEmail = adminUser?.email ?? "admin@charusat.edu.in";
     const roleForStore = newRole === "Student" ? "student" : newRole === "Faculty" ? "faculty" : "admin";
 
-    // Create in auth store (sets default password + mustChangePassword)
-    const authResult = createUserWithDefaultPassword(newName.trim(), newEmail.trim(), roleForStore, actorEmail);
+    // Create directly in MongoDB Atlas via auth store & API
+    const authResult = await createUserWithDefaultPassword(newName.trim(), newEmail.trim(), roleForStore, actorEmail);
     if (!authResult.ok) { setAddError(authResult.error ?? "Failed to create account."); return; }
 
-    // Also add to app data context for the UI table
-    addUser({
+    // Also update local UI table
+    await addUser({
       name: newName.trim(),
       email: newEmail.trim().toLowerCase(),
       role: newRole,

@@ -6,8 +6,8 @@ const escalationSchema = new mongoose.Schema(
     subjectId: { type: mongoose.Schema.Types.ObjectId, ref: "Subject", required: false, default: null },
     question: { type: String, required: true },
     status: { type: String, enum: ["open", "resolved"], default: "open" },
+    facultyAnswer: { type: String, default: "" },
     resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-
   },
   { timestamps: true }
 );

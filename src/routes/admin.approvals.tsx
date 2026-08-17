@@ -45,36 +45,19 @@ function ApprovalsPage() {
 
   const pending = documents.filter((d) => d.status === "pending");
 
-  const API_BASE = "http://localhost:5000";
-
   const handleApprove = async (id: string) => {
-    approveDocument(id);
-    setJustActed((p) => ({ ...p, [id]: "approved" }));
-    if (inspectDoc?.id === id) setInspectDoc(null);
-
-    // Trigger real backend ingestion into Python ChromaDB vector store
-    try {
-      await fetch(`${API_BASE}/api/documents/${id}/approve`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (err) {
-      console.warn("[Admin Approvals] Backend approve trigger notice:", err);
+    const success = await approveDocument(id);
+    if (success) {
+      setJustActed((p) => ({ ...p, [id]: "approved" }));
+      if (inspectDoc?.id === id) setInspectDoc(null);
     }
   };
 
   const handleReject = async (id: string) => {
-    rejectDocument(id);
-    setJustActed((p) => ({ ...p, [id]: "rejected" }));
-    if (inspectDoc?.id === id) setInspectDoc(null);
-
-    try {
-      await fetch(`${API_BASE}/api/documents/${id}/reject`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (err) {
-      console.warn("[Admin Approvals] Backend reject trigger notice:", err);
+    const success = await rejectDocument(id);
+    if (success) {
+      setJustActed((p) => ({ ...p, [id]: "rejected" }));
+      if (inspectDoc?.id === id) setInspectDoc(null);
     }
   };
 
