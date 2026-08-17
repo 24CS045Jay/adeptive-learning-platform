@@ -239,7 +239,8 @@ function LoginPage() {
           type="button"
           onClick={toggle}
           aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          className="theme-toggle-pill"
+          title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          className="theme-toggle-pill hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <span
             className={cn(
@@ -295,8 +296,9 @@ function LoginPage() {
         <div
           className="relative rounded-2xl overflow-hidden"
           style={{
-            boxShadow:
-              "0 0 0 1px oklch(0.62 0.22 293 / 15%), 0 32px 80px -20px rgba(0,0,0,0.55), 0 0 60px -10px oklch(0.62 0.22 293 / 10%)",
+            boxShadow: isDark
+              ? "0 0 0 1px rgba(167,139,250,0.24), 0 32px 80px -20px rgba(0,0,0,0.72), 0 0 70px -12px rgba(139,92,246,0.22)"
+              : "0 0 0 1px oklch(0.62 0.22 293 / 15%), 0 32px 80px -20px rgba(0,0,0,0.28), 0 0 60px -10px oklch(0.62 0.22 293 / 10%)",
           }}
         >
           <div className="grid lg:grid-cols-[40%_60%] min-h-[600px]">
@@ -345,8 +347,9 @@ function LoginPage() {
                           setActiveRole(r.key);
                           setView("login");
                         }}
+                        aria-pressed={isActive}
                         className={cn(
-                          "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                          "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                           isActive
                             ? "bg-violet text-white shadow-sm"
                             : "text-muted-foreground hover:text-foreground",
@@ -697,7 +700,7 @@ function LoginForm({
         <button
           type="button"
           onClick={() => setShowGoogleModal(true)}
-          className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-card/50 py-3 text-sm font-medium text-foreground transition hover:bg-accent/30 hover:border-violet/25"
+          className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-card/50 py-3 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-violet/35 hover:bg-accent/40 hover:shadow-[0_8px_20px_-12px_rgba(124,58,237,0.55)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <Chrome className="h-4 w-4 text-muted-foreground" />
           Continue with Google
@@ -723,7 +726,7 @@ function LoginForm({
               placeholder="Email address"
               required
               className={cn(
-                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
+                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 hover:border-violet/30",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
                 isDark ? "border-border" : "border-border",
               )}
@@ -744,7 +747,7 @@ function LoginForm({
               placeholder="Password"
               required
               className={cn(
-                "w-full rounded-full border bg-background/60 pl-11 pr-11 py-3 text-sm text-foreground outline-none transition",
+                "w-full rounded-full border bg-background/60 pl-11 pr-11 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 hover:border-violet/30",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
                 isDark ? "border-border" : "border-border",
               )}
@@ -1088,7 +1091,7 @@ function RegisterForm({
               placeholder="Full name"
               required
               className={cn(
-                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
+                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 hover:border-violet/30",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
                 isDark ? "border-border" : "border-border",
               )}
@@ -1108,7 +1111,7 @@ function RegisterForm({
               placeholder="Email address"
               required
               className={cn(
-                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
+                "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 hover:border-violet/30",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
                 isDark ? "border-border" : "border-border",
               )}
@@ -1154,7 +1157,7 @@ function RegisterForm({
               placeholder="Password"
               required
               className={cn(
-                "w-full rounded-full border bg-background/60 pl-11 pr-11 py-3 text-sm text-foreground outline-none transition",
+                "w-full rounded-full border bg-background/60 pl-11 pr-11 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 hover:border-violet/30",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
                 isDark ? "border-border" : "border-border",
               )}
@@ -1281,7 +1284,7 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
                 placeholder="you@charusat.edu.in"
                 required
                 className={cn(
-                  "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
+                  "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 hover:border-violet/30",
                   "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
                   isDark ? "border-border" : "border-border",
                 )}
