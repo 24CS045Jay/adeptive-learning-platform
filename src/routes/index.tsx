@@ -13,6 +13,7 @@ import {
   Sun,
   X,
   UserPlus,
+  Search,
 } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
@@ -219,17 +220,17 @@ function LoginPage() {
   return (
     <div
       className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 font-sans"
-      style={{ background: isDark ? "#0d0d14" : "#f7f7fb" }}
+      style={{ background: isDark ? "#142119" : "#f4f2e8" }}
     >
       {/* ── Ambient background glows (page level) ── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div
           className="absolute -left-32 top-1/4 h-[500px] w-[500px] rounded-full opacity-[0.08] blur-[100px]"
-          style={{ background: "radial-gradient(circle, #8b5cf6 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, #86aa62 0%, transparent 70%)" }}
         />
         <div
           className="absolute -right-32 bottom-1/4 h-[400px] w-[400px] rounded-full opacity-[0.05] blur-[90px]"
-          style={{ background: "radial-gradient(circle, #f5c451 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, #efbd68 0%, transparent 70%)" }}
         />
       </div>
 
@@ -297,15 +298,15 @@ function LoginPage() {
           className="relative rounded-2xl overflow-hidden"
           style={{
             boxShadow: isDark
-              ? "0 0 0 1px rgba(167,139,250,0.24), 0 32px 80px -20px rgba(0,0,0,0.72), 0 0 70px -12px rgba(139,92,246,0.22)"
-              : "0 0 0 1px oklch(0.62 0.22 293 / 15%), 0 32px 80px -20px rgba(0,0,0,0.28), 0 0 60px -10px oklch(0.62 0.22 293 / 10%)",
+              ? "0 0 0 1px rgba(226,237,214,0.22), 0 32px 80px -20px rgba(0,0,0,0.72), 0 0 70px -12px rgba(134,170,98,0.22)"
+              : "0 0 0 1px rgba(79,125,76,0.22), 0 28px 70px -20px rgba(47,72,48,0.28), 0 0 60px -10px rgba(110,145,82,0.18)",
           }}
         >
           <div className="grid lg:grid-cols-[40%_60%] min-h-[600px]">
             {/* ── LEFT PANEL (Form side) ── */}
             <div
               className="relative px-8 py-10 lg:px-12 lg:py-14"
-              style={{ background: isDark ? "#17171f" : "#ffffff" }}
+              style={{ background: isDark ? "#1d3022" : "#fffdf5" }}
             >
               {/* Logo lockup */}
               <div className="mb-8 flex items-center gap-3">
@@ -328,13 +329,20 @@ function LoginPage() {
                 <p className="mt-2 text-sm text-muted-foreground">
                   Your syllabus-grounded study companion
                 </p>
+                <div className="mt-5 flex items-center gap-2 rounded-full border border-border/80 bg-background/70 px-4 py-2.5 text-xs text-muted-foreground shadow-sm">
+                  <Search className="h-3.5 w-3.5 text-violet" />
+                  <span className="flex-1">Search your syllabus or ask the tutor</span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                    AI
+                  </span>
+                </div>
               </div>
 
               {/* Role tabs (pill-shaped segmented control) */}
               <div className="mb-6">
                 <div
                   className="inline-flex rounded-full p-1 gap-1"
-                  style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)" }}
+                  style={{ background: isDark ? "rgba(226,237,214,0.08)" : "rgba(63,111,69,0.08)" }}
                 >
                   {ROLES.map((r) => {
                     const isActive = activeRole === r.key;
@@ -421,8 +429,8 @@ function LoginPage() {
                 className="absolute inset-0"
                 style={{
                   background: isDark
-                    ? "linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #a855f7 100%)"
-                    : "linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #9333ea 100%)",
+                    ? "linear-gradient(135deg, #294d32 0%, #3f6f45 52%, #6e9658 100%)"
+                    : "linear-gradient(135deg, #6f8f5b 0%, #9caf78 52%, #c8d7a8 100%)",
                 }}
               />
 
@@ -435,8 +443,8 @@ function LoginPage() {
                     width: "400px",
                     height: "400px",
                     background: isDark
-                      ? "radial-gradient(circle, rgba(167,139,250,0.4) 0%, rgba(139,92,246,0.2) 50%, transparent 100%)"
-                      : "radial-gradient(circle, rgba(233,213,255,0.6) 0%, rgba(216,180,254,0.3) 50%, transparent 100%)",
+                      ? "radial-gradient(circle, rgba(218,233,183,0.4) 0%, rgba(134,170,98,0.2) 50%, transparent 100%)"
+                      : "radial-gradient(circle, rgba(241,246,218,0.6) 0%, rgba(210,226,177,0.3) 50%, transparent 100%)",
                     filter: "blur(60px)",
                   }}
                 />
@@ -448,8 +456,8 @@ function LoginPage() {
                     width: "500px",
                     height: "500px",
                     background: isDark
-                      ? "radial-gradient(circle, rgba(196,181,253,0.3) 0%, rgba(167,139,250,0.15) 50%, transparent 100%)"
-                      : "radial-gradient(circle, rgba(243,232,255,0.5) 0%, rgba(233,213,255,0.25) 50%, transparent 100%)",
+                      ? "radial-gradient(circle, rgba(211,229,178,0.3) 0%, rgba(134,170,98,0.15) 50%, transparent 100%)"
+                      : "radial-gradient(circle, rgba(245,248,224,0.5) 0%, rgba(225,237,194,0.25) 50%, transparent 100%)",
                     filter: "blur(80px)",
                   }}
                 />
@@ -461,8 +469,8 @@ function LoginPage() {
                     width: "250px",
                     height: "250px",
                     background: isDark
-                      ? "radial-gradient(circle, rgba(245,196,81,0.25) 0%, rgba(217,119,6,0.1) 50%, transparent 100%)"
-                      : "radial-gradient(circle, rgba(254,243,199,0.4) 0%, rgba(253,224,71,0.2) 50%, transparent 100%)",
+                      ? "radial-gradient(circle, rgba(239,189,104,0.25) 0%, rgba(214,148,61,0.1) 50%, transparent 100%)"
+                      : "radial-gradient(circle, rgba(255,246,211,0.4) 0%, rgba(246,216,142,0.2) 50%, transparent 100%)",
                     filter: "blur(50px)",
                   }}
                 />
@@ -474,8 +482,8 @@ function LoginPage() {
                     width: "60%",
                     height: "70%",
                     background: isDark
-                      ? "linear-gradient(135deg, rgba(196,181,253,0.15) 0%, rgba(139,92,246,0.1) 100%)"
-                      : "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(233,213,255,0.15) 100%)",
+                      ? "linear-gradient(135deg, rgba(211,229,178,0.15) 0%, rgba(134,170,98,0.1) 100%)"
+                      : "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(239,246,218,0.15) 100%)",
                     clipPath: "polygon(25% 0%, 100% 0%, 100% 100%, 0% 80%)",
                     filter: "blur(30px)",
                   }}
@@ -487,8 +495,8 @@ function LoginPage() {
                   style={{
                     height: "200px",
                     background: isDark
-                      ? "linear-gradient(180deg, transparent 0%, rgba(139,92,246,0.2) 100%)"
-                      : "linear-gradient(180deg, transparent 0%, rgba(192,132,252,0.3) 100%)",
+                      ? "linear-gradient(180deg, transparent 0%, rgba(134,170,98,0.2) 100%)"
+                      : "linear-gradient(180deg, transparent 0%, rgba(168,194,125,0.3) 100%)",
                     filter: "blur(20px)",
                   }}
                 />
