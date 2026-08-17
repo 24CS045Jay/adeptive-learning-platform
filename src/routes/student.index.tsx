@@ -1,21 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  MessageCircle, ListChecks, Flame, Play, Star,
-} from "lucide-react";
+import { MessageCircle, ListChecks, Flame, Play, Star, BookOpen, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import {
-  AreaChart, Area, BarChart, Bar, ResponsiveContainer,
-  XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ReferenceLine,
 } from "recharts";
 import { PageHeader, ActionCard, Card, Pill } from "@/components/app-shell";
 import { weakTopics } from "@/lib/mock-data";
 import { useAppData } from "@/lib/app-data-context";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/student/")(
-  { component: StudentDashboard }
-);
+export const Route = createFileRoute("/student/")({ component: StudentDashboard });
 
 const TIME_SPENT = [
   { day: "Mon", hours: 1.5 },
@@ -63,21 +67,39 @@ function MasteryRing({ pct }: { pct: number }) {
       if (p < 1) rafRef.current = requestAnimationFrame(run);
     };
     rafRef.current = requestAnimationFrame(run);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [pct]);
 
   const outerDash = `${(displayed / 100) * circ} ${circ}`;
-  const innerDash  = `${(WEEKLY_PROGRESS_PCT / 100) * innerCirc} ${innerCirc}`;
+  const innerDash = `${(WEEKLY_PROGRESS_PCT / 100) * innerCirc} ${innerCirc}`;
 
   return (
     <div className="relative flex h-40 w-40 items-center justify-center">
       <svg className="absolute inset-0 -rotate-90" viewBox="0 0 128 128" width="160" height="160">
         {/* Track rings */}
-        <circle cx="64" cy="64" r={outerR} fill="none" stroke="var(--color-border)" strokeWidth="10" />
-        <circle cx="64" cy="64" r={innerR} fill="none" stroke="var(--color-border)" strokeWidth="5" />
+        <circle
+          cx="64"
+          cy="64"
+          r={outerR}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth="10"
+        />
+        <circle
+          cx="64"
+          cy="64"
+          r={innerR}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth="5"
+        />
         {/* Weekly progress ring (gold, inner) */}
         <circle
-          cx="64" cy="64" r={innerR}
+          cx="64"
+          cy="64"
+          r={innerR}
           fill="none"
           stroke="#f5c451"
           strokeWidth="5"
@@ -88,7 +110,9 @@ function MasteryRing({ pct }: { pct: number }) {
         />
         {/* Mastery ring (violet, outer) */}
         <circle
-          cx="64" cy="64" r={outerR}
+          cx="64"
+          cy="64"
+          r={outerR}
           fill="none"
           stroke="#8b5cf6"
           strokeWidth="10"
@@ -135,7 +159,7 @@ function UpcomingQuizzes({ subjects }: { subjects: any[] }) {
     "Big Data Analytics": "📊",
     "Machine Learning": "🤖",
     "Cloud Computing": "☁️",
-    "Cybersecurity": "🔒",
+    Cybersecurity: "🔒",
   };
 
   const upcoming = subjects.slice(0, 4).map((s, i) => ({
@@ -158,20 +182,26 @@ function UpcomingQuizzes({ subjects }: { subjects: any[] }) {
             transition={{ delay: i * 0.07, duration: 0.2 }}
             className={cn(
               "flex items-center gap-3 rounded-xl border p-3 transition",
-              q.urgency === "urgent" ? "quiz-urgent" :
-              q.urgency === "soon"   ? "quiz-soon"   :
-              "border-border bg-background hover:bg-accent/30"
+              q.urgency === "urgent"
+                ? "quiz-urgent"
+                : q.urgency === "soon"
+                  ? "quiz-soon"
+                  : "border-border bg-background hover:bg-accent/30",
             )}
           >
             <span className="text-xl">{q.icon}</span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-foreground">{q.title}</div>
-              <div className={cn(
-                "text-[11px] font-semibold",
-                q.urgency === "urgent" ? "text-danger" :
-                q.urgency === "soon"   ? "text-gold"   :
-                "text-muted-foreground"
-              )}>
+              <div
+                className={cn(
+                  "text-[11px] font-semibold",
+                  q.urgency === "urgent"
+                    ? "text-danger"
+                    : q.urgency === "soon"
+                      ? "text-gold"
+                      : "text-muted-foreground",
+                )}
+              >
                 {q.due}
               </div>
             </div>
@@ -196,14 +226,19 @@ function UpcomingQuizzes({ subjects }: { subjects: any[] }) {
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-xl"
-      style={{ boxShadow: "0 8px 24px -6px rgba(0,0,0,0.25), 0 0 0 1px var(--color-border)" }}>
+    <div
+      className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-xl"
+      style={{ boxShadow: "0 8px 24px -6px rgba(0,0,0,0.25), 0 0 0 1px var(--color-border)" }}
+    >
       {label && <div className="font-bold text-foreground mb-1">{label}</div>}
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
           <span className="text-muted-foreground">{p.name ?? p.dataKey}:</span>
-          <span className="font-semibold text-foreground">{p.value}{p.name === "Hours" ? "h" : ""}</span>
+          <span className="font-semibold text-foreground">
+            {p.value}
+            {p.name === "Hours" ? "h" : ""}
+          </span>
         </div>
       ))}
     </div>
@@ -217,7 +252,9 @@ function PulseChartDot(props: any) {
   return (
     <g>
       <motion.circle
-        cx={cx} cy={cy} r={6}
+        cx={cx}
+        cy={cy}
+        r={6}
         fill="#8b5cf6"
         stroke="var(--color-card)"
         strokeWidth={2}
@@ -230,12 +267,99 @@ function PulseChartDot(props: any) {
 
 function StudentDashboard() {
   const { subjects } = useAppData();
+  const semesters = Array.from(
+    new Set(subjects.map((subject) => Number(subject.semester)).filter(Boolean)),
+  ).sort((a, b) => a - b);
+  const [activeSemester, setActiveSemester] = useState<number | null>(semesters[0] ?? null);
+  const visibleSubjects = activeSemester
+    ? subjects.filter((subject) => Number(subject.semester) === activeSemester)
+    : subjects;
 
   const axisStyle = { fontSize: 11, fill: "var(--color-muted-foreground)" };
 
   return (
     <div>
-      <PageHeader title="Your Learning Dashboard" subtitle="Personalized progress across all subjects." />
+      <PageHeader
+        title="Your Learning Dashboard"
+        subtitle="Personalized progress across all subjects."
+      />
+
+      {/* ── Semester navigator ── */}
+      <section className="mb-5 rounded-3xl border border-violet/15 bg-gradient-to-r from-violet/10 via-card to-gold/5 p-4 shadow-[0_14px_32px_-24px_oklch(0.62_0.22_293_/_45%)]">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet">
+              Your curriculum
+            </div>
+            <h2 className="mt-1 font-serif text-lg font-bold text-foreground">
+              Explore by semester
+            </h2>
+          </div>
+          <div className="hidden text-xs text-muted-foreground sm:block">
+            {visibleSubjects.length} subject{visibleSubjects.length === 1 ? "" : "s"} shown
+          </div>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            onClick={() => setActiveSemester(null)}
+            className={cn(
+              "min-w-[84px] rounded-2xl border px-3 py-2 text-left transition",
+              activeSemester === null
+                ? "border-violet bg-violet text-white shadow-md"
+                : "border-border bg-card text-muted-foreground hover:border-violet/40 hover:text-foreground",
+            )}
+          >
+            <div className="text-[10px] font-bold uppercase tracking-wider">All</div>
+            <div className="mt-1 text-xs font-semibold">Subjects</div>
+          </button>
+          {semesters.map((semester) => {
+            const count = subjects.filter(
+              (subject) => Number(subject.semester) === semester,
+            ).length;
+            return (
+              <button
+                key={semester}
+                type="button"
+                onClick={() => setActiveSemester(semester)}
+                className={cn(
+                  "min-w-[84px] rounded-2xl border px-3 py-2 text-left transition",
+                  activeSemester === semester
+                    ? "border-violet bg-violet text-white shadow-md"
+                    : "border-border bg-card text-muted-foreground hover:border-violet/40 hover:text-foreground",
+                )}
+              >
+                <div className="text-[10px] font-bold uppercase tracking-wider">Sem {semester}</div>
+                <div className="mt-1 flex items-center gap-1 text-xs font-semibold">
+                  {count} course{count === 1 ? "" : "s"} <ChevronRight className="h-3 w-3" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {visibleSubjects.length > 0 && (
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {visibleSubjects.slice(0, 4).map((subject) => (
+              <div
+                key={subject.id}
+                className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/60 px-3 py-2.5"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet/10 text-violet">
+                  <BookOpen className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-semibold text-foreground">
+                    {subject.name}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {subject.code} · Sem {subject.semester}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* ── Row 1: Mastery Hero, Streak, Quick Actions ── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -278,7 +402,12 @@ function StudentDashboard() {
           <div className="h-20 mt-1">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={STREAK_DAYS} barSize={14}>
-                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Bar
                   dataKey="active"
                   radius={[5, 5, 0, 0]}
@@ -301,10 +430,20 @@ function StudentDashboard() {
         {/* Quick Actions */}
         <div className="flex flex-col gap-3">
           <Link to="/student/ask">
-            <ActionCard icon={MessageCircle} title="Ask the AI Tutor" description="Get grounded answers from your course material." color="indigo" />
+            <ActionCard
+              icon={MessageCircle}
+              title="Ask the AI Tutor"
+              description="Get grounded answers from your course material."
+              color="indigo"
+            />
           </Link>
           <Link to="/student/quizzes">
-            <ActionCard icon={ListChecks} title="Take a Quiz" description="Self-assess and build your mastery score." color="amber" />
+            <ActionCard
+              icon={ListChecks}
+              title="Take a Quiz"
+              description="Self-assess and build your mastery score."
+              color="amber"
+            />
           </Link>
         </div>
       </div>
@@ -317,8 +456,8 @@ function StudentDashboard() {
               <AreaChart data={TIME_SPENT}>
                 <defs>
                   <linearGradient id="timeGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="#8b5cf6" stopOpacity={0.55} />
-                    <stop offset="55%"  stopColor="#8b5cf6" stopOpacity={0.18} />
+                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.55} />
+                    <stop offset="55%" stopColor="#8b5cf6" stopOpacity={0.18} />
                     <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -332,7 +471,12 @@ function StudentDashboard() {
                   stroke="var(--color-muted-foreground)"
                   strokeDasharray="4 4"
                   strokeOpacity={0.5}
-                  label={{ value: `Avg ${AVG_HOURS}h`, fill: "var(--color-muted-foreground)", fontSize: 10, position: "right" }}
+                  label={{
+                    value: `Avg ${AVG_HOURS}h`,
+                    fill: "var(--color-muted-foreground)",
+                    fontSize: 10,
+                    position: "right",
+                  }}
                 />
                 <Area
                   type="monotone"
@@ -364,11 +508,16 @@ function StudentDashboard() {
           ) : (
             <ul className="divide-y divide-border">
               {weakTopics.map((w) => (
-                <li key={w.topic} className="flex items-center justify-between py-3 transition hover:bg-accent/30 rounded-lg px-2">
+                <li
+                  key={w.topic}
+                  className="flex items-center justify-between py-3 transition hover:bg-accent/30 rounded-lg px-2"
+                >
                   <div>
                     <div className="flex items-center gap-2">
                       <div className="font-medium text-foreground">{w.topic}</div>
-                      <span className="rounded-full bg-violet/10 px-1.5 py-0.5 text-[10px] font-bold text-violet">AI Generated</span>
+                      <span className="rounded-full bg-violet/10 px-1.5 py-0.5 text-[10px] font-bold text-violet">
+                        AI Generated
+                      </span>
                     </div>
                     <div className="text-xs text-muted-foreground">{w.reason}</div>
                   </div>

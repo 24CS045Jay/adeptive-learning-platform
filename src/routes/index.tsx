@@ -14,7 +14,7 @@ import {
   X,
   UserPlus,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -189,6 +189,7 @@ function LoginPage() {
   const [pendingRole, setPendingRole] = useState<Role>("student");
   const navigate = useNavigate();
   const { isDark, toggle } = useTheme();
+  const prefersReduced = useReducedMotion();
 
   const handleLoginSuccess = useCallback(
     (role: Role, mustChangePw: boolean) => {
@@ -524,15 +525,8 @@ function LoginPage() {
                           : "radial-gradient(circle, rgba(253,224,71,0.5) 0%, transparent 70%)",
                         filter: "blur(40px)",
                       }}
-                      animate={{
-                        y: [0, -20, 0],
-                        scale: [1, 1.1, 1],
-                      }}
-                      transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
+                      animate={prefersReduced ? undefined : { y: [0, -20, 0], scale: [1, 1.1, 1] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                     />
 
                     <motion.div
@@ -543,17 +537,12 @@ function LoginPage() {
                           : "radial-gradient(circle, rgba(196,181,253,0.6) 0%, transparent 70%)",
                         filter: "blur(35px)",
                       }}
-                      animate={{
-                        y: [0, 25, 0],
-                        x: [0, -15, 0],
-                        scale: [1, 1.15, 1],
-                      }}
-                      transition={{
-                        duration: 5,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 0.5,
-                      }}
+                      animate={
+                        prefersReduced
+                          ? undefined
+                          : { y: [0, 25, 0], x: [0, -15, 0], scale: [1, 1.15, 1] }
+                      }
+                      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
                     />
 
                     <motion.div
@@ -564,17 +553,12 @@ function LoginPage() {
                           : "radial-gradient(circle, rgba(216,180,254,0.55) 0%, transparent 70%)",
                         filter: "blur(38px)",
                       }}
-                      animate={{
-                        y: [0, 20, 0],
-                        x: [0, 10, 0],
-                        scale: [1, 1.2, 1],
-                      }}
-                      transition={{
-                        duration: 4.5,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 1,
-                      }}
+                      animate={
+                        prefersReduced
+                          ? undefined
+                          : { y: [0, 20, 0], x: [0, 10, 0], scale: [1, 1.2, 1] }
+                      }
+                      transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                     />
 
                     {/* Glow effect behind character */}
