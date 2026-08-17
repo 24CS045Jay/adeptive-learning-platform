@@ -12,6 +12,14 @@ export const Route = createFileRoute("/admin/users")({
   component: UsersPage,
 });
 
+const DEPARTMENTS = [
+  { code: "CE", label: "Computer Engineering" },
+  { code: "CSE", label: "Computer Science & Engineering" },
+  { code: "IT", label: "Information Technology" },
+  { code: "EC", label: "Electronics & Communication" },
+  { code: "AIML", label: "AI & Machine Learning" },
+];
+
 const ROLE_COLORS: Record<string, { text: string; bg: string; ring: string }> = {
   Student: { text: "text-violet", bg: "bg-violet/10", ring: "avatar-ring-violet" },
   Faculty: { text: "text-gold", bg: "bg-gold/10", ring: "avatar-ring-gold" },
@@ -65,6 +73,7 @@ function UsersPage() {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newRole, setNewRole] = useState<"Student" | "Faculty" | "Admin">("Student");
+  const [newDepartment, setNewDepartment] = useState(adminDepartment ?? "CSE");
   const [addError, setAddError] = useState<string | null>(null);
 
   const filtered = users.filter((u) => {
@@ -83,6 +92,13 @@ function UsersPage() {
     if (!newName.trim() || !newEmail.trim()) return;
 
     const actorEmail = adminUser?.email ?? "admin@charusat.edu.in";
+    const departmentForStore = isSuperAdmin ? newDepartment : adminDepartment;
+    if (!departmentForStore) {
+      setAddError(
+        "Your admin account is not assigned to a department. Ask a super admin to assign one.",
+      );
+      return;
+    }
     const roleForStore =
       newRole === "Student" ? "student" : newRole === "Faculty" ? "faculty" : "admin";
 
@@ -92,6 +108,8 @@ function UsersPage() {
       newEmail.trim(),
       roleForStore,
       actorEmail,
+      adminUser?.token,
+      departmentForStore,
     );
     if (!authResult.ok) {
       setAddError(authResult.error ?? "Failed to create account.");
@@ -105,6 +123,7 @@ function UsersPage() {
       role: newRole,
       status: "active",
       passwordStatus: "default",
+      departmentId: departmentForStore,
     });
 
     setToastEmail(newEmail.trim().toLowerCase());
@@ -205,6 +224,26 @@ function UsersPage() {
                   <option value="Faculty">Faculty</option>
                   <option value="Admin">Admin</option>
                 </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-muted-foreground">Department</label>
+                {isSuperAdmin ? (
+                  <select
+                    value={newDepartment}
+                    onChange={(e) => setNewDepartment(e.target.value)}
+                    className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet transition"
+                  >
+                    {DEPARTMENTS.map((department) => (
+                      <option key={department.code} value={department.code}>
+                        {department.code} · {department.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm text-foreground">
+                    {adminDepartment ?? "Not assigned"}
+                  </div>
+                )}
               </div>
               <button
                 type="submit"

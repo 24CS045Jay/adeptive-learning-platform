@@ -1,4 +1,5 @@
 export { User } from "./User.js";
+export { Department } from "./Department.js";
 export { Subject } from "./Subject.js";
 export { Document } from "./Document.js";
 export { DocumentChunk } from "./DocumentChunk.js";

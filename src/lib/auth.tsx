@@ -36,7 +36,13 @@ interface AuthContextValue {
   sendPasswordReset: (email: string) => { ok: boolean; error?: string };
   changePassword: (currentPw: string, newPw: string) => { ok: boolean; error?: string };
   clearMustChangePw: () => void;
-  register: (name: string, email: string, password: string, role: Role) => Promise<LoginResult>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    role: Role,
+    departmentId?: string,
+  ) => Promise<LoginResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -165,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: data.user.name,
           email: data.user.email,
           role: data.user.role,
+          departmentId: data.user.departmentId,
           token: data.token,
           mustChangePassword: false,
         };
@@ -251,7 +258,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (name: string, email: string, password: string, role: Role): Promise<LoginResult> => {
+    async (
+      name: string,
+      email: string,
+      password: string,
+      role: Role,
+      departmentId?: string,
+    ): Promise<LoginResult> => {
       try {
         const response = await fetch(`${API_BASE}/api/auth/register`, {
           method: "POST",
@@ -261,6 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: email.trim().toLowerCase(),
             password,
             role,
+            departmentId,
           }),
         });
 
@@ -284,6 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: data.user.name,
           email: data.user.email,
           role: data.user.role,
+          departmentId: data.user.departmentId,
           token: data.token,
           mustChangePassword: false,
         };
@@ -299,7 +314,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "[Auth] Backend unreachable, using local store fallback for registration:",
           error,
         );
-        const localResult = await registerUser(name, email, password, role);
+        const localResult = await registerUser(name, email, password, role, departmentId);
         if (localResult.ok) {
           const cleanEmail = email.trim().toLowerCase();
           const found = MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
@@ -308,6 +323,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name: name.trim() || cleanEmail.split("@")[0],
             email: cleanEmail,
             role,
+            departmentId,
             token: `local_fallback_token_${Date.now()}`,
             mustChangePassword: false,
           };

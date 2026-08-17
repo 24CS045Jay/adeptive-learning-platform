@@ -1,8 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useId, useCallback, useEffect, useRef } from "react";
 import {
-  GraduationCap, User, Users, Shield, Eye, EyeOff, Chrome,
-  ArrowLeft, Moon, Sun, X, UserPlus,
+  GraduationCap,
+  User,
+  Users,
+  Shield,
+  Eye,
+  EyeOff,
+  Chrome,
+  ArrowLeft,
+  Moon,
+  Sun,
+  X,
+  UserPlus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth";
@@ -15,7 +25,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Sign in · AI Tutor" },
-      { name: "description", content: "Sign in to AI Tutor — grounded academic tutoring for CSPIT CSE." },
+      {
+        name: "description",
+        content: "Sign in to AI Tutor — grounded academic tutoring for CSPIT CSE.",
+      },
       { property: "og:title", content: "Sign in · AI Tutor" },
     ],
   }),
@@ -56,6 +69,14 @@ const ROLES = [
 
 type ViewMode = "login" | "forgot" | "register";
 
+const DEPARTMENT_OPTIONS = [
+  { code: "CE", label: "Computer Engineering" },
+  { code: "CSE", label: "Computer Science & Engineering" },
+  { code: "IT", label: "Information Technology" },
+  { code: "EC", label: "Electronics & Communication" },
+  { code: "AIML", label: "AI & Machine Learning" },
+];
+
 // ─── Ambient Particle Node ────────────────────────────────────────────────────
 
 interface ParticleNode {
@@ -79,7 +100,7 @@ function useParticles(count: number) {
       vx: (Math.random() - 0.5) * 0.35,
       vy: (Math.random() - 0.5) * 0.35,
       size: 2 + Math.random() * 2.5,
-    }))
+    })),
   );
 
   const rafRef = useRef<number>(0);
@@ -100,7 +121,7 @@ function useParticles(count: number) {
           nx = Math.max(0, Math.min(W, nx));
           ny = Math.max(0, Math.min(H, ny));
           return { ...n, x: nx, y: ny, vx: nvx, vy: nvy };
-        })
+        }),
       );
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -115,7 +136,8 @@ function useParticles(count: number) {
 function ParticleCanvas() {
   const nodes = useParticles(NUM_PARTICLES);
 
-  const connections: Array<{ x1: number; y1: number; x2: number; y2: number; opacity: number }> = [];
+  const connections: Array<{ x1: number; y1: number; x2: number; y2: number; opacity: number }> =
+    [];
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
       const dx = nodes[i].x - nodes[j].x;
@@ -123,8 +145,10 @@ function ParticleCanvas() {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < CONNECTION_DIST) {
         connections.push({
-          x1: nodes[i].x, y1: nodes[i].y,
-          x2: nodes[j].x, y2: nodes[j].y,
+          x1: nodes[i].x,
+          y1: nodes[i].y,
+          x2: nodes[j].x,
+          y2: nodes[j].y,
           opacity: (1 - dist / CONNECTION_DIST) * 0.12,
         });
       }
@@ -140,20 +164,17 @@ function ParticleCanvas() {
       {connections.map((c, i) => (
         <line
           key={i}
-          x1={c.x1} y1={c.y1}
-          x2={c.x2} y2={c.y2}
+          x1={c.x1}
+          y1={c.y1}
+          x2={c.x2}
+          y2={c.y2}
           stroke="#8b5cf6"
           strokeWidth={0.8}
           strokeOpacity={c.opacity}
         />
       ))}
       {nodes.map((n) => (
-        <circle
-          key={n.id}
-          cx={n.x} cy={n.y} r={n.size}
-          fill="#8b5cf6"
-          fillOpacity={0.18}
-        />
+        <circle key={n.id} cx={n.x} cy={n.y} r={n.size} fill="#8b5cf6" fillOpacity={0.18} />
       ))}
     </svg>
   );
@@ -169,15 +190,18 @@ function LoginPage() {
   const navigate = useNavigate();
   const { isDark, toggle } = useTheme();
 
-  const handleLoginSuccess = useCallback((role: Role, mustChangePw: boolean) => {
-    if (mustChangePw) {
-      // Bypass animation — go straight to forced password change
-      navigate({ to: "/change-password" });
-      return;
-    }
-    setPendingRole(role);
-    setAnimating(true);
-  }, [navigate]);
+  const handleLoginSuccess = useCallback(
+    (role: Role, mustChangePw: boolean) => {
+      if (mustChangePw) {
+        // Bypass animation — go straight to forced password change
+        navigate({ to: "/change-password" });
+        return;
+      }
+      setPendingRole(role);
+      setAnimating(true);
+    },
+    [navigate],
+  );
 
   const handleRegisterSuccess = useCallback((role: Role) => {
     setPendingRole(role);
@@ -216,20 +240,42 @@ function LoginPage() {
           aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           className="theme-toggle-pill"
         >
-          <span className={cn("absolute left-2 flex h-5 w-5 items-center justify-center transition-opacity", isDark ? "opacity-30" : "opacity-0")}>
+          <span
+            className={cn(
+              "absolute left-2 flex h-5 w-5 items-center justify-center transition-opacity",
+              isDark ? "opacity-30" : "opacity-0",
+            )}
+          >
             <Sun className="h-3.5 w-3.5 text-gold" />
           </span>
-          <span className={cn("absolute right-2 flex h-5 w-5 items-center justify-center transition-opacity", !isDark ? "opacity-30" : "opacity-0")}>
+          <span
+            className={cn(
+              "absolute right-2 flex h-5 w-5 items-center justify-center transition-opacity",
+              !isDark ? "opacity-30" : "opacity-0",
+            )}
+          >
             <Moon className="h-3.5 w-3.5 text-violet" />
           </span>
           <span className={cn("theme-toggle-thumb", isDark ? "is-dark" : "is-light")}>
             <AnimatePresence mode="wait" initial={false}>
               {isDark ? (
-                <motion.span key="sun" initial={{ rotate: -45, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 45, opacity: 0 }} transition={{ duration: 0.15 }}>
+                <motion.span
+                  key="sun"
+                  initial={{ rotate: -45, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 45, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
                   <Sun className="h-3.5 w-3.5 text-white" />
                 </motion.span>
               ) : (
-                <motion.span key="moon" initial={{ rotate: 45, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -45, opacity: 0 }} transition={{ duration: 0.15 }}>
+                <motion.span
+                  key="moon"
+                  initial={{ rotate: 45, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -45, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
                   <Moon className="h-3.5 w-3.5 text-white" />
                 </motion.span>
               )}
@@ -248,7 +294,8 @@ function LoginPage() {
         <div
           className="relative rounded-2xl overflow-hidden"
           style={{
-            boxShadow: "0 0 0 1px oklch(0.62 0.22 293 / 15%), 0 32px 80px -20px rgba(0,0,0,0.55), 0 0 60px -10px oklch(0.62 0.22 293 / 10%)",
+            boxShadow:
+              "0 0 0 1px oklch(0.62 0.22 293 / 15%), 0 32px 80px -20px rgba(0,0,0,0.55), 0 0 60px -10px oklch(0.62 0.22 293 / 10%)",
           }}
         >
           <div className="grid lg:grid-cols-[40%_60%] min-h-[600px]">
@@ -272,7 +319,9 @@ function LoginPage() {
 
               {/* Headline and subtext */}
               <div className="mb-6">
-                <h1 className="font-serif text-3xl font-bold text-foreground">Sign in to AI Tutor</h1>
+                <h1 className="font-serif text-3xl font-bold text-foreground">
+                  Sign in to AI Tutor
+                </h1>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Your syllabus-grounded study companion
                 </p>
@@ -291,12 +340,15 @@ function LoginPage() {
                         key={r.key}
                         id={`role-tab-${r.key}`}
                         type="button"
-                        onClick={() => { setActiveRole(r.key); setView("login"); }}
+                        onClick={() => {
+                          setActiveRole(r.key);
+                          setView("login");
+                        }}
                         className={cn(
                           "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                          isActive 
-                            ? "bg-violet text-white shadow-sm" 
-                            : "text-muted-foreground hover:text-foreground"
+                          isActive
+                            ? "bg-violet text-white shadow-sm"
+                            : "text-muted-foreground hover:text-foreground",
                         )}
                       >
                         {r.label}
@@ -364,7 +416,7 @@ function LoginPage() {
               <div
                 className="absolute inset-0"
                 style={{
-                  background: isDark 
+                  background: isDark
                     ? "linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #a855f7 100%)"
                     : "linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #9333ea 100%)",
                 }}
@@ -378,7 +430,7 @@ function LoginPage() {
                   style={{
                     width: "400px",
                     height: "400px",
-                    background: isDark 
+                    background: isDark
                       ? "radial-gradient(circle, rgba(167,139,250,0.4) 0%, rgba(139,92,246,0.2) 50%, transparent 100%)"
                       : "radial-gradient(circle, rgba(233,213,255,0.6) 0%, rgba(216,180,254,0.3) 50%, transparent 100%)",
                     filter: "blur(60px)",
@@ -391,7 +443,7 @@ function LoginPage() {
                   style={{
                     width: "500px",
                     height: "500px",
-                    background: isDark 
+                    background: isDark
                       ? "radial-gradient(circle, rgba(196,181,253,0.3) 0%, rgba(167,139,250,0.15) 50%, transparent 100%)"
                       : "radial-gradient(circle, rgba(243,232,255,0.5) 0%, rgba(233,213,255,0.25) 50%, transparent 100%)",
                     filter: "blur(80px)",
@@ -404,7 +456,7 @@ function LoginPage() {
                   style={{
                     width: "250px",
                     height: "250px",
-                    background: isDark 
+                    background: isDark
                       ? "radial-gradient(circle, rgba(245,196,81,0.25) 0%, rgba(217,119,6,0.1) 50%, transparent 100%)"
                       : "radial-gradient(circle, rgba(254,243,199,0.4) 0%, rgba(253,224,71,0.2) 50%, transparent 100%)",
                     filter: "blur(50px)",
@@ -417,7 +469,7 @@ function LoginPage() {
                   style={{
                     width: "60%",
                     height: "70%",
-                    background: isDark 
+                    background: isDark
                       ? "linear-gradient(135deg, rgba(196,181,253,0.15) 0%, rgba(139,92,246,0.1) 100%)"
                       : "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(233,213,255,0.15) 100%)",
                     clipPath: "polygon(25% 0%, 100% 0%, 100% 100%, 0% 80%)",
@@ -430,7 +482,7 @@ function LoginPage() {
                   className="absolute bottom-0 left-0 right-0"
                   style={{
                     height: "200px",
-                    background: isDark 
+                    background: isDark
                       ? "linear-gradient(180deg, transparent 0%, rgba(139,92,246,0.2) 100%)"
                       : "linear-gradient(180deg, transparent 0%, rgba(192,132,252,0.3) 100%)",
                     filter: "blur(20px)",
@@ -450,20 +502,14 @@ function LoginPage() {
                   <div
                     className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl mb-4"
                     style={{
-                      background: isDark 
-                        ? "rgba(255, 255, 255, 0.12)"
-                        : "rgba(255, 255, 255, 0.3)",
+                      background: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.3)",
                       backdropFilter: "blur(10px)",
                     }}
                   >
                     <GraduationCap className="h-7 w-7 text-white" />
-                    <div className="font-serif text-2xl font-bold text-white">
-                      AI Tutor
-                    </div>
+                    <div className="font-serif text-2xl font-bold text-white">AI Tutor</div>
                   </div>
-                  <p className="text-sm font-medium text-white/90">
-                    Smart Study Assistant
-                  </p>
+                  <p className="text-sm font-medium text-white/90">Smart Study Assistant</p>
                 </div>
 
                 {/* Center: 3D Student Illustration with animated background */}
@@ -473,7 +519,7 @@ function LoginPage() {
                     <motion.div
                       className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full -z-10"
                       style={{
-                        background: isDark 
+                        background: isDark
                           ? "radial-gradient(circle, rgba(245,196,81,0.4) 0%, transparent 70%)"
                           : "radial-gradient(circle, rgba(253,224,71,0.5) 0%, transparent 70%)",
                         filter: "blur(40px)",
@@ -488,11 +534,11 @@ function LoginPage() {
                         ease: "easeInOut",
                       }}
                     />
-                    
+
                     <motion.div
                       className="absolute top-1/2 right-1/4 w-24 h-24 rounded-full -z-10"
                       style={{
-                        background: isDark 
+                        background: isDark
                           ? "radial-gradient(circle, rgba(167,139,250,0.5) 0%, transparent 70%)"
                           : "radial-gradient(circle, rgba(196,181,253,0.6) 0%, transparent 70%)",
                         filter: "blur(35px)",
@@ -513,7 +559,7 @@ function LoginPage() {
                     <motion.div
                       className="absolute bottom-1/3 left-1/3 w-28 h-28 rounded-full -z-10"
                       style={{
-                        background: isDark 
+                        background: isDark
                           ? "radial-gradient(circle, rgba(196,181,253,0.45) 0%, transparent 70%)"
                           : "radial-gradient(circle, rgba(216,180,254,0.55) 0%, transparent 70%)",
                         filter: "blur(38px)",
@@ -535,13 +581,13 @@ function LoginPage() {
                     <div
                       className="absolute inset-0 -z-10"
                       style={{
-                        background: isDark 
+                        background: isDark
                           ? "radial-gradient(ellipse at bottom, rgba(255,255,255,0.15) 0%, transparent 60%)"
                           : "radial-gradient(ellipse at bottom, rgba(255,255,255,0.4) 0%, transparent 60%)",
                         filter: "blur(40px)",
                       }}
                     />
-                    
+
                     {/* Character image - white background removed via CSS filter */}
                     <img
                       src="/assets/illustrations/student-illustration.png"
@@ -558,14 +604,15 @@ function LoginPage() {
                       }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        if (target.src.includes('.png')) {
-                          target.src = '/assets/illustrations/student-illustration.svg';
+                        if (target.src.includes(".png")) {
+                          target.src = "/assets/illustrations/student-illustration.svg";
                         } else {
-                          target.style.display = 'none';
+                          target.style.display = "none";
                           const parent = target.parentElement;
-                          if (parent && !parent.querySelector('.fallback-placeholder')) {
-                            const fallback = document.createElement('div');
-                            fallback.className = 'fallback-placeholder flex flex-col items-center justify-center gap-4 py-12';
+                          if (parent && !parent.querySelector(".fallback-placeholder")) {
+                            const fallback = document.createElement("div");
+                            fallback.className =
+                              "fallback-placeholder flex flex-col items-center justify-center gap-4 py-12";
                             fallback.innerHTML = `
                               <div class="text-6xl opacity-50">👨‍🎓</div>
                               <div class="text-center text-white/70">
@@ -595,16 +642,10 @@ function LoginPage() {
       </motion.div>
 
       {/* ── Book animation overlay ── */}
-      <LoginAnimation
-        role={pendingRole}
-        active={animating}
-        onComplete={handleAnimationComplete}
-      />
+      <LoginAnimation role={pendingRole} active={animating} onComplete={handleAnimationComplete} />
     </div>
   );
 }
-
-
 
 // ─── Login Form ───────────────────────────────────────────────────────────────
 
@@ -645,7 +686,10 @@ function LoginForm({
     await new Promise((r) => setTimeout(r, 380));
     const result = await login(roleConfig.key, email.trim(), password);
     setLoading(false);
-    if (!result.ok) { setError(result.error ?? "Login failed."); return; }
+    if (!result.ok) {
+      setError(result.error ?? "Login failed.");
+      return;
+    }
     onLoginSuccess(roleConfig.key, result.mustChangePassword ?? false);
   };
 
@@ -697,7 +741,7 @@ function LoginForm({
               className={cn(
                 "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
-                isDark ? "border-border" : "border-border"
+                isDark ? "border-border" : "border-border",
               )}
             />
           </div>
@@ -718,7 +762,7 @@ function LoginForm({
               className={cn(
                 "w-full rounded-full border bg-background/60 pl-11 pr-11 py-3 text-sm text-foreground outline-none transition",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
-                isDark ? "border-border" : "border-border"
+                isDark ? "border-border" : "border-border",
               )}
             />
             <button
@@ -764,7 +808,7 @@ function LoginForm({
           whileHover={{ boxShadow: "0 0 24px -4px oklch(0.62 0.22 293 / 60%)" }}
           className={cn(
             "flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white shadow-md transition disabled:opacity-60",
-            "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]"
+            "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]",
           )}
         >
           {loading ? "Signing in…" : "Login"}
@@ -772,8 +816,7 @@ function LoginForm({
       </form>
 
       <div className="mt-5 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{
-          " "}
+        Don&apos;t have an account?{" "}
         <button
           type="button"
           onClick={onRegister}
@@ -816,19 +859,18 @@ function GoogleSignInModal({
   const [customName, setCustomName] = useState("");
   const [showCustom, setShowCustom] = useState(false);
 
-  const demoAccounts = role === "student"
-    ? [
-      { name: "Aarav Patel", email: "student@charusat.edu.in", avatar: "AP" },
-      { name: "Meera Joshi", email: "meera@charusat.edu.in", avatar: "MJ" },
-    ]
-    : role === "faculty"
+  const demoAccounts =
+    role === "student"
       ? [
-        { name: "Dr. Nisha Shah", email: "faculty@charusat.edu.in", avatar: "NS" },
-        { name: "Prof. Anil Kumar", email: "anil@charusat.edu.in", avatar: "AK" },
-      ]
-      : [
-        { name: "Rahul Mehta", email: "admin@charusat.edu.in", avatar: "RM" },
-      ];
+          { name: "Aarav Patel", email: "student@charusat.edu.in", avatar: "AP" },
+          { name: "Meera Joshi", email: "meera@charusat.edu.in", avatar: "MJ" },
+        ]
+      : role === "faculty"
+        ? [
+            { name: "Dr. Nisha Shah", email: "faculty@charusat.edu.in", avatar: "NS" },
+            { name: "Prof. Anil Kumar", email: "anil@charusat.edu.in", avatar: "AK" },
+          ]
+        : [{ name: "Rahul Mehta", email: "admin@charusat.edu.in", avatar: "RM" }];
 
   const handleSelectAccount = async (email: string, name?: string) => {
     setLoadingEmail(email);
@@ -848,10 +890,22 @@ function GoogleSignInModal({
         <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-2.5">
             <svg className="h-5 w-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
             </svg>
             <span className="font-medium text-sm text-foreground">Sign in with Google</span>
           </div>
@@ -861,7 +915,9 @@ function GoogleSignInModal({
         </div>
 
         <div className="py-4">
-          <p className="text-xs text-muted-foreground mb-3">Choose a Google account to continue to <strong>AI Tutor</strong></p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Choose a Google account to continue to <strong>AI Tutor</strong>
+          </p>
 
           <div className="space-y-2">
             {demoAccounts.map((acc) => (
@@ -877,14 +933,27 @@ function GoogleSignInModal({
                     {acc.avatar}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-foreground group-hover:text-violet">{acc.name}</div>
+                    <div className="text-sm font-semibold text-foreground group-hover:text-violet">
+                      {acc.name}
+                    </div>
                     <div className="text-xs text-muted-foreground">{acc.email}</div>
                   </div>
                 </div>
                 {loadingEmail === acc.email ? (
                   <svg className="h-4 w-4 animate-spin text-violet" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
                   </svg>
                 ) : null}
               </button>
@@ -956,6 +1025,7 @@ function RegisterForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState<string>(roleConfig.placeholder.email);
   const [password, setPassword] = useState("");
+  const [departmentId, setDepartmentId] = useState("CSE");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -964,6 +1034,7 @@ function RegisterForm({
     setName("");
     setEmail(roleConfig.placeholder.email);
     setPassword("");
+    setDepartmentId("CSE");
     setError(null);
   }, [roleConfig.key]);
 
@@ -972,7 +1043,13 @@ function RegisterForm({
     setError(null);
     setLoading(true);
     await new Promise((r) => setTimeout(r, 300));
-    const result = await register(name.trim(), email.trim(), password, roleConfig.key);
+    const result = await register(
+      name.trim(),
+      email.trim(),
+      password,
+      roleConfig.key,
+      departmentId,
+    );
     setLoading(false);
 
     if (!result.ok) {
@@ -986,12 +1063,18 @@ function RegisterForm({
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <button type="button" onClick={onBack} className="text-muted-foreground hover:text-foreground transition">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-muted-foreground hover:text-foreground transition"
+        >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
           <h2 className="font-serif text-xl font-bold text-foreground">Create your account</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">Register as a {roleConfig.label.toLowerCase()} to access AI Tutor.</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Register as a {roleConfig.label.toLowerCase()} to access AI Tutor.
+          </p>
         </div>
       </div>
 
@@ -1023,7 +1106,7 @@ function RegisterForm({
               className={cn(
                 "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
-                isDark ? "border-border" : "border-border"
+                isDark ? "border-border" : "border-border",
               )}
             />
           </div>
@@ -1043,10 +1126,36 @@ function RegisterForm({
               className={cn(
                 "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
-                isDark ? "border-border" : "border-border"
+                isDark ? "border-border" : "border-border",
               )}
             />
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor={`${id}-department`}
+            className="mb-1.5 ml-4 block text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            Department
+          </label>
+          <select
+            id={`${id}-department`}
+            value={departmentId}
+            onChange={(e) => setDepartmentId(e.target.value)}
+            required
+            className={cn(
+              "w-full rounded-full border bg-background/60 px-4 py-3 text-sm text-foreground outline-none transition",
+              "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
+              isDark ? "border-border" : "border-border",
+            )}
+          >
+            {DEPARTMENT_OPTIONS.map((department) => (
+              <option key={department.code} value={department.code}>
+                {department.code} · {department.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="mb-4">
@@ -1063,7 +1172,7 @@ function RegisterForm({
               className={cn(
                 "w-full rounded-full border bg-background/60 pl-11 pr-11 py-3 text-sm text-foreground outline-none transition",
                 "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
-                isDark ? "border-border" : "border-border"
+                isDark ? "border-border" : "border-border",
               )}
             />
             <button
@@ -1084,15 +1193,14 @@ function RegisterForm({
           whileHover={{ boxShadow: "0 0 24px -4px oklch(0.62 0.22 293 / 60%)" }}
           className={cn(
             "flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white shadow-md transition disabled:opacity-60",
-            "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]"
+            "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]",
           )}
         >
           {loading ? "Creating account…" : `Sign up as ${roleConfig.label}`}
         </motion.button>
 
         <div className="mt-4 text-center text-sm text-muted-foreground">
-          Already have an account?{
-            " "}
+          Already have an account?{" "}
           <button
             type="button"
             onClick={onBack}
@@ -1124,19 +1232,28 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
     await new Promise((r) => setTimeout(r, 400));
     const result = sendPasswordReset(email.trim());
     setLoading(false);
-    if (!result.ok) { setError(result.error ?? "Error sending reset link."); return; }
+    if (!result.ok) {
+      setError(result.error ?? "Error sending reset link.");
+      return;
+    }
     setSent(true);
   };
 
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <button type="button" onClick={onBack} className="text-muted-foreground hover:text-foreground transition">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-muted-foreground hover:text-foreground transition"
+        >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
           <h2 className="font-serif text-xl font-bold text-foreground">Forgot password?</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">We'll send a reset link to your email.</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            We'll send a reset link to your email.
+          </p>
         </div>
       </div>
 
@@ -1144,17 +1261,29 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
         <div className="rounded-2xl border border-success/30 bg-success/8 px-6 py-8 text-center">
           <div className="text-3xl mb-3">📬</div>
           <div className="font-semibold text-foreground">Reset link sent!</div>
-          <p className="mt-2 text-sm text-muted-foreground">Check your inbox at <strong>{email}</strong>.</p>
-          <p className="mt-1 text-xs text-muted-foreground opacity-70">(Demo — no email is actually sent.)</p>
-          <button type="button" onClick={onBack} className="mt-6 text-sm font-medium text-violet hover:underline">
+          <p className="mt-2 text-sm text-muted-foreground">
+            Check your inbox at <strong>{email}</strong>.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground opacity-70">
+            (Demo — no email is actually sent.)
+          </p>
+          <button
+            type="button"
+            onClick={onBack}
+            className="mt-6 text-sm font-medium text-violet hover:underline"
+          >
             Back to login
           </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} noValidate>
           {error && (
-            <div role="alert" className="mb-4 flex items-start gap-2 rounded-full border border-danger/30 bg-danger/8 px-5 py-3 text-sm text-danger">
-              <span>⚠</span><span>{error}</span>
+            <div
+              role="alert"
+              className="mb-4 flex items-start gap-2 rounded-full border border-danger/30 bg-danger/8 px-5 py-3 text-sm text-danger"
+            >
+              <span>⚠</span>
+              <span>{error}</span>
             </div>
           )}
           <div className="mb-6">
@@ -1170,7 +1299,7 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
                 className={cn(
                   "w-full rounded-full border bg-background/60 pl-11 pr-4 py-3 text-sm text-foreground outline-none transition",
                   "focus:border-violet/50 focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]",
-                  isDark ? "border-border" : "border-border"
+                  isDark ? "border-border" : "border-border",
                 )}
               />
             </div>
@@ -1182,20 +1311,37 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
             whileHover={{ boxShadow: "0 0 24px -4px oklch(0.62 0.22 293 / 60%)" }}
             className={cn(
               "flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white shadow-md transition disabled:opacity-60",
-              "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]"
+              "bg-gradient-to-r from-[#9d72f7] via-[#8b5cf6] to-[#6d28d9]",
             )}
           >
             {loading && (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
             )}
             {loading ? "Sending…" : "Send reset link"}
           </motion.button>
           <p className="mt-5 text-center text-sm text-muted-foreground">
             Remembered it?{" "}
-            <button type="button" onClick={onBack} className="font-medium text-violet hover:underline">Back to login</button>
+            <button
+              type="button"
+              onClick={onBack}
+              className="font-medium text-violet hover:underline"
+            >
+              Back to login
+            </button>
           </p>
         </form>
       )}

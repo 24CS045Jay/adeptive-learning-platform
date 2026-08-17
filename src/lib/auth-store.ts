@@ -41,13 +41,62 @@ const DEFAULT_PASSWORD_HASH = hashPassword(DEFAULT_PASSWORD);
 
 // ─── Seeded demo users ────────────────────────────────────────────────────────
 const DEFAULT_USERS: MockUser[] = [
-  { id: "u0", name: "Amit Thakkar", email: "hod@charusat.ac.in", passwordHash: hashPassword("12345678"), role: "admin", mustChangePassword: false },
-  { id: "u1", name: "Aarav Patel", email: "student@charusat.edu.in", passwordHash: hashPassword("student123"), role: "student", mustChangePassword: false },
-  { id: "u2", name: "Meera Joshi", email: "meera@charusat.edu.in", passwordHash: hashPassword("student123"), role: "student", mustChangePassword: false },
-  { id: "u3", name: "Kabir Singh", email: "kabir@charusat.edu.in", passwordHash: hashPassword("student123"), role: "student", mustChangePassword: false },
-  { id: "u5", name: "Dr. Nisha Shah", email: "faculty@charusat.edu.in", passwordHash: hashPassword("faculty123"), role: "faculty", mustChangePassword: false },
-  { id: "u6", name: "Prof. Anil Kumar", email: "anil@charusat.edu.in", passwordHash: hashPassword("faculty123"), role: "faculty", mustChangePassword: false },
-  { id: "u8", name: "Rahul Mehta", email: "admin@charusat.edu.in", passwordHash: hashPassword("admin123"), role: "admin", mustChangePassword: false },
+  {
+    id: "u0",
+    name: "Amit Thakkar",
+    email: "hod@charusat.ac.in",
+    passwordHash: hashPassword("12345678"),
+    role: "admin",
+    mustChangePassword: false,
+  },
+  {
+    id: "u1",
+    name: "Aarav Patel",
+    email: "student@charusat.edu.in",
+    passwordHash: hashPassword("student123"),
+    role: "student",
+    mustChangePassword: false,
+  },
+  {
+    id: "u2",
+    name: "Meera Joshi",
+    email: "meera@charusat.edu.in",
+    passwordHash: hashPassword("student123"),
+    role: "student",
+    mustChangePassword: false,
+  },
+  {
+    id: "u3",
+    name: "Kabir Singh",
+    email: "kabir@charusat.edu.in",
+    passwordHash: hashPassword("student123"),
+    role: "student",
+    mustChangePassword: false,
+  },
+  {
+    id: "u5",
+    name: "Dr. Nisha Shah",
+    email: "faculty@charusat.edu.in",
+    passwordHash: hashPassword("faculty123"),
+    role: "faculty",
+    mustChangePassword: false,
+  },
+  {
+    id: "u6",
+    name: "Prof. Anil Kumar",
+    email: "anil@charusat.edu.in",
+    passwordHash: hashPassword("faculty123"),
+    role: "faculty",
+    mustChangePassword: false,
+  },
+  {
+    id: "u8",
+    name: "Rahul Mehta",
+    email: "admin@charusat.edu.in",
+    passwordHash: hashPassword("admin123"),
+    role: "admin",
+    mustChangePassword: false,
+  },
 ];
 
 // ─── Audit Log ────────────────────────────────────────────────────────────────
@@ -65,13 +114,15 @@ function loadAuditLog(): AuditEntry[] {
   try {
     const s = localStorage.getItem("ai_tutor_audit_log");
     if (s) return JSON.parse(s);
-  } catch { }
+  } catch {}
   return [];
 }
 
 function saveAuditLog(log: AuditEntry[]) {
   if (typeof window === "undefined") return;
-  try { localStorage.setItem("ai_tutor_audit_log", JSON.stringify(log)); } catch { }
+  try {
+    localStorage.setItem("ai_tutor_audit_log", JSON.stringify(log));
+  } catch {}
 }
 
 export const AUDIT_LOG: AuditEntry[] = loadAuditLog();
@@ -114,13 +165,15 @@ function loadUsers(): MockUser[] {
       if (migrated) saveUsers(parsed);
       return parsed;
     }
-  } catch { }
+  } catch {}
   return DEFAULT_USERS;
 }
 
 function saveUsers(users: MockUser[]) {
   if (typeof window === "undefined") return;
-  try { localStorage.setItem("ai_tutor_mock_users", JSON.stringify(users)); } catch { }
+  try {
+    localStorage.setItem("ai_tutor_mock_users", JSON.stringify(users));
+  } catch {}
 }
 
 export const MOCK_USERS: MockUser[] = loadUsers();
@@ -137,13 +190,15 @@ export function requestPasswordReset(email: string): boolean {
 export function changePassword(
   email: string,
   currentPw: string,
-  newPw: string
+  newPw: string,
 ): { ok: boolean; error?: string } {
   const user = MOCK_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
   if (!user) return { ok: false, error: "Account not found." };
-  if (!verifyPassword(currentPw, user.passwordHash)) return { ok: false, error: "Current password is incorrect." };
+  if (!verifyPassword(currentPw, user.passwordHash))
+    return { ok: false, error: "Current password is incorrect." };
   if (newPw.length < 6) return { ok: false, error: "New password must be at least 6 characters." };
-  if (newPw === DEFAULT_PASSWORD) return { ok: false, error: 'Please choose a password other than the default "password1234".' };
+  if (newPw === DEFAULT_PASSWORD)
+    return { ok: false, error: 'Please choose a password other than the default "password1234".' };
   user.passwordHash = hashPassword(newPw);
   user.mustChangePassword = false;
   saveUsers(MOCK_USERS);
@@ -157,7 +212,9 @@ export async function createUserWithDefaultPassword(
   name: string,
   email: string,
   role: Role,
-  actorEmail: string
+  actorEmail: string,
+  actorToken?: string,
+  departmentId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const cleanEmail = email.trim().toLowerCase();
 
@@ -166,14 +223,17 @@ export async function createUserWithDefaultPassword(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(actorToken ? { Authorization: `Bearer ${actorToken}` } : {}),
         "x-user-role": "admin",
         "x-user-id": "admin_user",
+        ...(departmentId ? { "x-department-id": departmentId } : {}),
       },
       body: JSON.stringify({
         name: name.trim(),
         email: cleanEmail,
         password: DEFAULT_PASSWORD,
         role: role.toLowerCase(),
+        ...(departmentId ? { departmentId } : {}),
       }),
     });
 
@@ -182,6 +242,7 @@ export async function createUserWithDefaultPassword(
       if (response.status === 400 && data.error?.includes("already exists")) {
         return { ok: false, error: "An account with this email already exists." };
       }
+      return { ok: false, error: data.error || "Account creation failed." };
     }
   } catch (err) {
     console.warn("[AuthStore] Backend creation warning, saving to local fallback:", err);
@@ -210,6 +271,7 @@ export async function registerUser(
   email: string,
   password: string,
   role: Role,
+  departmentId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const cleanEmail = email.trim().toLowerCase();
   if (password.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
@@ -218,7 +280,7 @@ export async function registerUser(
     const response = await fetch(`${API_BASE}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: cleanEmail, password, role }),
+      body: JSON.stringify({ name: name.trim(), email: cleanEmail, password, role, departmentId }),
     });
 
     const data = await response.json().catch(() => ({}));
@@ -248,7 +310,7 @@ export async function registerUser(
 export function loginUser(
   role: Role,
   email: string,
-  password: string
+  password: string,
 ): { ok: boolean; user?: MockUser; error?: string } {
   const cleanEmail = email.trim().toLowerCase();
   const user = MOCK_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
@@ -292,5 +354,3 @@ export function loginOrCreateGoogleUser(
   }
   return { user };
 }
-
-

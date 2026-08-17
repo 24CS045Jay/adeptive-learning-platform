@@ -21,17 +21,38 @@ async function syncCompleteDatabase() {
       email: adminEmail,
       passwordHash,
       role: "admin",
+      departmentId: "CSE",
     },
-    { upsert: true, returnDocument: "after" }
+    { upsert: true, returnDocument: "after" },
   );
   console.log(`[SyncCompleteDB] ✅ Admin User synced: ${adminUser.name} (${adminUser.email})`);
 
   // 2. Sync Seed Subjects into MongoDB Atlas
   const seedSubjectsData = [
-    { name: "Big Data Analytics", code: "CSE501", semester: 5, syllabus: "Covers MapReduce, Spark, and big data pipelines." },
-    { name: "Machine Learning", code: "CSE502", semester: 5, syllabus: "Covers supervised/unsupervised algorithms and deep learning." },
-    { name: "Cloud Computing", code: "CSE503", semester: 5, syllabus: "Covers AWS, Azure, GCP, virtualisation, and containers." },
-    { name: "Distributed Systems", code: "CSE601", semester: 6, syllabus: "Covers Paxos, Raft, CAP theorem, and consistency." },
+    {
+      name: "Big Data Analytics",
+      code: "CSE501",
+      semester: 5,
+      syllabus: "Covers MapReduce, Spark, and big data pipelines.",
+    },
+    {
+      name: "Machine Learning",
+      code: "CSE502",
+      semester: 5,
+      syllabus: "Covers supervised/unsupervised algorithms and deep learning.",
+    },
+    {
+      name: "Cloud Computing",
+      code: "CSE503",
+      semester: 5,
+      syllabus: "Covers AWS, Azure, GCP, virtualisation, and containers.",
+    },
+    {
+      name: "Distributed Systems",
+      code: "CSE601",
+      semester: 6,
+      syllabus: "Covers Paxos, Raft, CAP theorem, and consistency.",
+    },
   ];
 
   for (const s of seedSubjectsData) {
@@ -42,11 +63,14 @@ async function syncCompleteDatabase() {
         code: s.code,
         semester: s.semester,
         syllabus: s.syllabus,
+        departmentId: "CSE",
         facultyId: adminUser._id,
       },
-      { upsert: true, returnDocument: "after" }
+      { upsert: true, returnDocument: "after" },
     );
-    console.log(`[SyncCompleteDB] ✅ Subject synced: ${updatedSubject.code} - ${updatedSubject.name}`);
+    console.log(
+      `[SyncCompleteDB] ✅ Subject synced: ${updatedSubject.code} - ${updatedSubject.name}`,
+    );
   }
 
   const userCount = await User.countDocuments();

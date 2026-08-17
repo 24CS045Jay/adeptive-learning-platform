@@ -23,8 +23,8 @@ async function seedAdmin() {
     if (!adminEmail || !adminPassword) {
       console.warn(
         "\n[SECURITY WARNING] SEED_ADMIN_EMAIL or SEED_ADMIN_PASSWORD is not set in process.env!\n" +
-        "Falling back to default credentials: 'admin@charusat.edu.in' / 'admin123'\n" +
-        "PLEASE CHANGE THE ADMIN PASSWORD IMMEDIATELY AFTER FIRST LOGIN!\n"
+          "Falling back to default credentials: 'admin@charusat.edu.in' / 'admin123'\n" +
+          "PLEASE CHANGE THE ADMIN PASSWORD IMMEDIATELY AFTER FIRST LOGIN!\n",
       );
       adminEmail = adminEmail || "admin@charusat.edu.in";
       adminPassword = adminPassword || "admin123";
@@ -36,7 +36,9 @@ async function seedAdmin() {
     });
 
     if (existingAdmin) {
-      console.log(`[Seed Admin] Admin account already exists: ${existingAdmin.email} (ID: ${existingAdmin._id}). Skipping creation.`);
+      console.log(
+        `[Seed Admin] Admin account already exists: ${existingAdmin.email} (ID: ${existingAdmin._id}). Skipping creation.`,
+      );
       process.exit(0);
     }
 
@@ -48,6 +50,7 @@ async function seedAdmin() {
       email: adminEmail.toLowerCase().trim(),
       passwordHash,
       role: "admin",
+      departmentId: "CSE",
     });
 
     console.log(`\n[Seed Admin Success] Created initial admin account!`);
