@@ -1,23 +1,44 @@
 import express from "express";
-import { Subject, AuditLog } from "../models/index.js";
+import { Subject, User, AuditLog } from "../models/index.js";
 import { authenticate, requireRole } from "../middleware/auth.js";
+import { isSuperAdmin, getDepartmentId, scopedResourceFilter } from "../middleware/department.js";
 
 const router = express.Router();
 
-// GET /api/subjects - List all subjects (populates facultyId)
+function resourceKey(id) {
+  return /^[0-9a-fA-F]{24}$/.test(id) ? { _id: id } : { code: id.toUpperCase() };
+}
+
+async function validateFaculty(facultyId, departmentId) {
+  if (!facultyId) return true;
+  const faculty = await User.findOne({ _id: facultyId, role: "faculty", departmentId }).select(
+    "_id",
+  );
+  return Boolean(faculty);
+}
+
+// GET /api/subjects - department-scoped list, including populated faculty only from that department.
 router.get("/", authenticate, async (req, res) => {
   try {
-    const subjects = await Subject.find().populate("facultyId", "name email role").sort({ code: 1 });
+    const filter = scopedResourceFilter(req, res);
+    if (!filter) return;
+    const subjects = await Subject.find(filter)
+      .populate("facultyId", "name email role departmentId")
+      .sort({ code: 1 });
     return res.json(subjects);
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch subjects." });
   }
 });
 
-// GET /api/subjects/:id - Get single subject
 router.get("/:id", authenticate, async (req, res) => {
   try {
-    const subject = await Subject.findById(req.params.id).populate("facultyId", "name email role");
+    const filter = scopedResourceFilter(req, res, resourceKey(req.params.id));
+    if (!filter) return;
+    const subject = await Subject.findOne(filter).populate(
+      "facultyId",
+      "name email role departmentId",
+    );
     if (!subject) return res.status(404).json({ error: "Subject not found." });
     return res.json(subject);
   } catch (error) {
@@ -25,33 +46,42 @@ router.get("/:id", authenticate, async (req, res) => {
   }
 });
 
-// POST /api/subjects - Create subject (Admin only)
 router.post("/", authenticate, requireRole("admin"), async (req, res) => {
   try {
     const { name, code, semester, facultyId, syllabus } = req.body;
-    if (!name || !code || !semester) {
+    if (!name || !code || !semester)
       return res.status(400).json({ error: "Name, code, and semester are required." });
-    }
+    const requestedDepartment = req.body.departmentId
+      ? String(req.body.departmentId).trim().toUpperCase()
+      : null;
+    const departmentId = isSuperAdmin(req.user) ? requestedDepartment : getDepartmentId(req.user);
+    if (!departmentId)
+      return res
+        .status(400)
+        .json({ error: "departmentId is required for department-scoped subjects." });
+    if (facultyId && !(await validateFaculty(facultyId, departmentId)))
+      return res
+        .status(403)
+        .json({ error: "Assigned faculty must belong to the subject's department." });
 
-    const existing = await Subject.findOne({ code: code.trim().toUpperCase() });
-    if (existing) {
-      return res.status(400).json({ error: `Subject with code '${code}' already exists.` });
-    }
-
+    const normalizedCode = code.trim().toUpperCase();
+    if (await Subject.findOne({ code: normalizedCode }))
+      return res
+        .status(400)
+        .json({ error: `Subject with code '${normalizedCode}' already exists.` });
     const subject = await Subject.create({
       name: name.trim(),
-      code: code.trim().toUpperCase(),
+      code: normalizedCode,
       semester: Number(semester),
+      departmentId,
       facultyId: facultyId || null,
       syllabus: syllabus || "",
     });
-
     await AuditLog.create({
       actorId: req.user.id || req.user._id,
       action: "CREATE_SUBJECT",
-      details: { subjectId: subject._id, code: subject.code, name: subject.name },
+      details: { subjectId: subject._id, code: subject.code, departmentId },
     });
-
     return res.status(201).json(subject);
   } catch (error) {
     console.error("[Subject Error] Create error:", error);
@@ -59,99 +89,82 @@ router.post("/", authenticate, requireRole("admin"), async (req, res) => {
   }
 });
 
-// PUT /api/subjects/:id - Update subject (Admin / Faculty)
-router.put("/:id", authenticate, async (req, res) => {
+router.put("/:id", authenticate, requireRole("admin", "faculty"), async (req, res) => {
   try {
+    const filter = scopedResourceFilter(req, res, resourceKey(req.params.id));
+    if (!filter) return;
+    const target = await Subject.findOne(filter);
+    if (!target) return res.status(404).json({ error: "Subject not found." });
     const { name, code, semester, facultyId, syllabus } = req.body;
     const updates = {};
-
     if (name) updates.name = name.trim();
     if (code) updates.code = code.trim().toUpperCase();
     if (semester != null) updates.semester = Number(semester);
-    if (facultyId !== undefined) updates.facultyId = facultyId || null;
+    if (facultyId !== undefined) {
+      if (facultyId && !(await validateFaculty(facultyId, target.departmentId)))
+        return res
+          .status(403)
+          .json({ error: "Assigned faculty must belong to the subject's department." });
+      updates.facultyId = facultyId || null;
+    }
     if (syllabus !== undefined) updates.syllabus = syllabus;
-
-    const findKey = req.params.id.match(/^[0-9a-fA-F]{24}$/)
-      ? { _id: req.params.id }
-      : { code: req.params.id.toUpperCase() };
-
-    const updated = await Subject.findOneAndUpdate(findKey, updates, { new: true }).populate("facultyId", "name email role");
-    if (!updated) return res.status(404).json({ error: "Subject not found." });
-
+    const updated = await Subject.findOneAndUpdate(filter, updates, { new: true }).populate(
+      "facultyId",
+      "name email role departmentId",
+    );
     await AuditLog.create({
       actorId: req.user.id || req.user._id,
       action: "UPDATE_SUBJECT",
       details: { subjectId: updated._id, code: updated.code },
     });
-
     return res.json(updated);
   } catch (error) {
     return res.status(500).json({ error: "Failed to update subject." });
   }
 });
 
-// POST /api/subjects/:id/enroll - Enroll student
-router.post("/:id/enroll", authenticate, async (req, res) => {
-  try {
-    const { userId } = req.body;
-    const studentId = userId || req.user._id || req.user.id;
+async function updateEnrollment(req, res, operation) {
+  const filter = scopedResourceFilter(req, res, resourceKey(req.params.id));
+  if (!filter) return;
+  const { userId } = req.body;
+  const studentId = userId || req.user._id || req.user.id;
+  const subject = await Subject.findOne(filter);
+  if (!subject) return res.status(404).json({ error: "Subject not found." });
+  const student = await User.findOne({
+    _id: studentId,
+    role: "student",
+    departmentId: subject.departmentId,
+  }).select("_id");
+  if (!student)
+    return res.status(403).json({ error: "Student must belong to the subject's department." });
+  const update =
+    operation === "enroll"
+      ? { $addToSet: { enrolledStudentIds: studentId } }
+      : { $pull: { enrolledStudentIds: studentId } };
+  return res.json(await Subject.findOneAndUpdate(filter, update, { new: true }));
+}
+router.post("/:id/enroll", authenticate, (req, res) =>
+  updateEnrollment(req, res, "enroll").catch(() =>
+    res.status(500).json({ error: "Failed to enroll student." }),
+  ),
+);
+router.post("/:id/unenroll", authenticate, (req, res) =>
+  updateEnrollment(req, res, "unenroll").catch(() =>
+    res.status(500).json({ error: "Failed to unenroll student." }),
+  ),
+);
 
-    const findKey = req.params.id.match(/^[0-9a-fA-F]{24}$/)
-      ? { _id: req.params.id }
-      : { code: req.params.id.toUpperCase() };
-
-    const updated = await Subject.findOneAndUpdate(
-      findKey,
-      { $addToSet: { enrolledStudentIds: studentId } },
-      { new: true }
-    );
-
-    if (!updated) return res.status(404).json({ error: "Subject not found." });
-    return res.json(updated);
-  } catch (error) {
-    return res.status(500).json({ error: "Failed to enroll student." });
-  }
-});
-
-// POST /api/subjects/:id/unenroll - Unenroll student
-router.post("/:id/unenroll", authenticate, async (req, res) => {
-  try {
-    const { userId } = req.body;
-    const studentId = userId || req.user._id || req.user.id;
-
-    const findKey = req.params.id.match(/^[0-9a-fA-F]{24}$/)
-      ? { _id: req.params.id }
-      : { code: req.params.id.toUpperCase() };
-
-    const updated = await Subject.findOneAndUpdate(
-      findKey,
-      { $pull: { enrolledStudentIds: studentId } },
-      { new: true }
-    );
-
-    if (!updated) return res.status(404).json({ error: "Subject not found." });
-    return res.json(updated);
-  } catch (error) {
-    return res.status(500).json({ error: "Failed to unenroll student." });
-  }
-});
-
-// DELETE /api/subjects/:id - Delete subject (Admin only)
 router.delete("/:id", authenticate, requireRole("admin"), async (req, res) => {
   try {
-    const findKey = req.params.id.match(/^[0-9a-fA-F]{24}$/)
-      ? { _id: req.params.id }
-      : { code: req.params.id.toUpperCase() };
-
-    const deleted = await Subject.findOneAndDelete(findKey);
+    const filter = scopedResourceFilter(req, res, resourceKey(req.params.id));
+    if (!filter) return;
+    const deleted = await Subject.findOneAndDelete(filter);
     if (!deleted) return res.status(404).json({ error: "Subject not found." });
-
     await AuditLog.create({
       actorId: req.user.id || req.user._id,
       action: "DELETE_SUBJECT",
-      details: { subjectId: deleted._id, code: deleted.code },
+      details: { subjectId: deleted._id, code: deleted.code, departmentId: deleted.departmentId },
     });
-
     return res.json({ message: "Subject deleted successfully.", id: String(deleted._id) });
   } catch (error) {
     return res.status(500).json({ error: "Failed to delete subject." });

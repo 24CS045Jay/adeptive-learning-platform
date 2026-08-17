@@ -17,6 +17,7 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
+  departmentId?: string;
   token?: string;
   mustChangePassword?: boolean;
 }
@@ -47,21 +48,33 @@ export function _setGlobalOnRegister(fn: (name: string, email: string, role: Rol
 
 // ─── Phase 9 Security Utilities ──────────────────────────────────────────────
 
-export function validateFileUpload(fileName: string, fileSizeMb: number): { valid: boolean; error?: string } {
+export function validateFileUpload(
+  fileName: string,
+  fileSizeMb: number,
+): { valid: boolean; error?: string } {
   const allowedExtensions = ["pdf", "pptx", "docx"];
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
   if (!allowedExtensions.includes(ext)) {
-    return { valid: false, error: `Invalid file format '.${ext}'. Only PDF, PPTX, and DOCX files are allowed.` };
+    return {
+      valid: false,
+      error: `Invalid file format '.${ext}'. Only PDF, PPTX, and DOCX files are allowed.`,
+    };
   }
   if (fileSizeMb > 25) {
-    return { valid: false, error: `File size (${fileSizeMb.toFixed(1)}MB) exceeds maximum limit of 25MB.` };
+    return {
+      valid: false,
+      error: `File size (${fileSizeMb.toFixed(1)}MB) exceeds maximum limit of 25MB.`,
+    };
   }
   return { valid: true };
 }
 
 const rateLimitMap: Record<string, { count: number; resetTime: number }> = {};
 
-export function checkApiRateLimit(endpoint: string, maxReqsPerMin = 30): { allowed: boolean; retryAfterSec?: number } {
+export function checkApiRateLimit(
+  endpoint: string,
+  maxReqsPerMin = 30,
+): { allowed: boolean; retryAfterSec?: number } {
   const now = Date.now();
   const entry = rateLimitMap[endpoint] ?? { count: 0, resetTime: now + 60000 };
   if (now > entry.resetTime) {
@@ -78,11 +91,18 @@ export function checkApiRateLimit(endpoint: string, maxReqsPerMin = 30): { allow
   return { allowed: true };
 }
 
-export function checkRoleAccess(user: AuthUser | null, requiredRole: Role): { allowed: boolean; status: number; error?: string } {
+export function checkRoleAccess(
+  user: AuthUser | null,
+  requiredRole: Role,
+): { allowed: boolean; status: number; error?: string } {
   if (!user) return { allowed: false, status: 401, error: "Unauthorized — Please sign in." };
   if (user.role !== requiredRole) {
     const roleLabel = requiredRole.charAt(0).toUpperCase() + requiredRole.slice(1);
-    return { allowed: false, status: 403, error: `Forbidden 403 — ${roleLabel.toUpperCase()} permission required.` };
+    return {
+      allowed: false,
+      status: 403,
+      error: `Forbidden 403 — ${roleLabel.toUpperCase()} permission required.`,
+    };
   }
   return { allowed: true, status: 200 };
 }
@@ -117,80 +137,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persistUser(u);
   };
 
-  const login = useCallback(async (role: Role, email: string, password: string): Promise<LoginResult> => {
-    try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, email: email.trim().toLowerCase(), password }),
-      });
-
-      const text = await response.text();
-      let data: any;
+  const login = useCallback(
+    async (role: Role, email: string, password: string): Promise<LoginResult> => {
       try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        return {
-          ok: false,
-          error: `Login failed: unexpected response from auth server (${response.status}).`,
-        };
-      }
-      if (!response.ok) {
-        return { ok: false, error: data.error || "Invalid email or password." };
-      }
+        const response = await fetch(`${API_BASE}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role, email: email.trim().toLowerCase(), password }),
+        });
 
-      const authUser: AuthUser = {
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-        token: data.token,
-        mustChangePassword: false,
-      };
+        const text = await response.text();
+        let data: any;
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          return {
+            ok: false,
+            error: `Login failed: unexpected response from auth server (${response.status}).`,
+          };
+        }
+        if (!response.ok) {
+          return { ok: false, error: data.error || "Invalid email or password." };
+        }
 
-      saveActiveUser(authUser);
-      return { ok: true, mustChangePassword: false };
-    } catch (error) {
-      console.warn("[Auth] Server fetch failed. Using local offline auth fallback:", error);
-      const localResult = loginUser(role, email, password);
-      if (localResult.ok && localResult.user) {
         const authUser: AuthUser = {
-          id: localResult.user.id,
-          name: localResult.user.name,
-          email: localResult.user.email,
-          role: localResult.user.role,
-          token: `local_fallback_token_${Date.now()}_${localResult.user.id}`,
-          mustChangePassword: localResult.user.mustChangePassword,
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          token: data.token,
+          mustChangePassword: false,
         };
+
         saveActiveUser(authUser);
-        return { ok: true, mustChangePassword: localResult.user.mustChangePassword };
+        return { ok: true, mustChangePassword: false };
+      } catch (error) {
+        console.warn("[Auth] Server fetch failed. Using local offline auth fallback:", error);
+        const localResult = loginUser(role, email, password);
+        if (localResult.ok && localResult.user) {
+          const authUser: AuthUser = {
+            id: localResult.user.id,
+            name: localResult.user.name,
+            email: localResult.user.email,
+            role: localResult.user.role,
+            token: `local_fallback_token_${Date.now()}_${localResult.user.id}`,
+            mustChangePassword: localResult.user.mustChangePassword,
+          };
+          saveActiveUser(authUser);
+          return { ok: true, mustChangePassword: localResult.user.mustChangePassword };
+        }
+        return { ok: false, error: localResult.error || "Invalid email or password." };
       }
-      return { ok: false, error: localResult.error || "Invalid email or password." };
-    }
-  }, []);
+    },
+    [],
+  );
 
-  const loginWithGoogle = useCallback((role: Role, customEmail?: string, customName?: string): LoginResult => {
-    const defaultEmail = role === "student" ? "student@charusat.edu.in" : role === "faculty" ? "faculty@charusat.edu.in" : "admin@charusat.edu.in";
-    const email = customEmail || defaultEmail;
-    const name = customName || (email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1) + " (Google)");
-    
-    const { user: account } = loginOrCreateGoogleUser(name, email, role);
-    const authUser: AuthUser = {
-      id: account.id,
-      name: account.name,
-      email: account.email,
-      role: account.role,
-      token: `google_oauth_token_${Date.now()}_${account.id}`,
-      mustChangePassword: false, // Google account does not need default password change
-    };
-    saveActiveUser(authUser);
-    if (_onRegisterCallback) {
-      _onRegisterCallback(account.name, account.email, account.role);
-    }
-    return { ok: true, mustChangePassword: false };
-  }, []);
+  const loginWithGoogle = useCallback(
+    (role: Role, customEmail?: string, customName?: string): LoginResult => {
+      const defaultEmail =
+        role === "student"
+          ? "student@charusat.edu.in"
+          : role === "faculty"
+            ? "faculty@charusat.edu.in"
+            : "admin@charusat.edu.in";
+      const email = customEmail || defaultEmail;
+      const name =
+        customName ||
+        email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1) + " (Google)";
 
-  const logout = useCallback(() => { saveActiveUser(null); }, []);
+      const { user: account } = loginOrCreateGoogleUser(name, email, role);
+      const authUser: AuthUser = {
+        id: account.id,
+        name: account.name,
+        email: account.email,
+        role: account.role,
+        token: `google_oauth_token_${Date.now()}_${account.id}`,
+        mustChangePassword: false, // Google account does not need default password change
+      };
+      saveActiveUser(authUser);
+      if (_onRegisterCallback) {
+        _onRegisterCallback(account.name, account.email, account.role);
+      }
+      return { ok: true, mustChangePassword: false };
+    },
+    [],
+  );
+
+  const logout = useCallback(() => {
+    saveActiveUser(null);
+  }, []);
 
   const sendPasswordReset = useCallback((email: string): { ok: boolean; error?: string } => {
     const ok = requestPasswordReset(email);
@@ -221,7 +256,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await fetch(`${API_BASE}/api/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), password, role }),
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            password,
+            role,
+          }),
         });
 
         const text = await response.text();
@@ -255,7 +295,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return { ok: true, mustChangePassword: false };
       } catch (error) {
-        console.warn("[Auth] Backend unreachable, using local store fallback for registration:", error);
+        console.warn(
+          "[Auth] Backend unreachable, using local store fallback for registration:",
+          error,
+        );
         const localResult = await registerUser(name, email, password, role);
         if (localResult.ok) {
           const cleanEmail = email.trim().toLowerCase();
@@ -283,7 +326,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, sendPasswordReset, changePassword, clearMustChangePw, register }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        loginWithGoogle,
+        logout,
+        sendPasswordReset,
+        changePassword,
+        clearMustChangePw,
+        register,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

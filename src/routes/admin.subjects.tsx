@@ -1,14 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  Plus, Trash2, ChevronDown, ChevronRight, BookOpen, Users,
-  GripVertical, Link2, FileText, Presentation, FileType2,
-  X, Check, Edit3, Save, CheckCircle2,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  BookOpen,
+  Users,
+  GripVertical,
+  Link2,
+  FileText,
+  Presentation,
+  FileType2,
+  X,
+  Check,
+  Edit3,
+  Save,
+  CheckCircle2,
 } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, Pill, EmptyState } from "@/components/app-shell";
 import { useAppData } from "@/lib/app-data-context";
 import type { LearningModule, LearningResource, ResourceType } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/admin/subjects")({
   component: SubjectsPage,
@@ -17,18 +31,18 @@ export const Route = createFileRoute("/admin/subjects")({
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const RESOURCE_ICONS: Record<ResourceType, React.ElementType> = {
-  pdf:   FileText,
-  pptx:  Presentation,
-  docx:  FileType2,
-  link:  Link2,
+  pdf: FileText,
+  pptx: Presentation,
+  docx: FileType2,
+  link: Link2,
   video: BookOpen,
 };
 
 const RESOURCE_COLORS: Record<ResourceType, string> = {
-  pdf:   "bg-red-brand/10 text-red-brand",
-  pptx:  "bg-amber-brand/15 text-gold",
-  docx:  "bg-indigo-brand/10 text-violet",
-  link:  "bg-teal-brand/10 text-teal-brand",
+  pdf: "bg-red-brand/10 text-red-brand",
+  pptx: "bg-amber-brand/15 text-gold",
+  docx: "bg-indigo-brand/10 text-violet",
+  link: "bg-teal-brand/10 text-teal-brand",
   video: "bg-green-brand/10 text-green-brand",
 };
 
@@ -36,32 +50,57 @@ const RESOURCE_COLORS: Record<ResourceType, string> = {
 
 function SubjectsPage() {
   const {
-    subjects: subjectList, modules, resources, users,
-    addSubject, deleteSubject, updateSyllabus,
-    addModule, removeModule, addResource, removeResource,
-    enrollStudent, unenrollStudent,
+    subjects: subjectList,
+    modules,
+    resources,
+    users,
+    addSubject,
+    deleteSubject,
+    updateSyllabus,
+    addModule,
+    removeModule,
+    addResource,
+    removeResource,
+    enrollStudent,
+    unenrollStudent,
   } = useAppData();
+  const { user: adminUser } = useAuth();
+  const adminDepartment = adminUser?.departmentId?.toUpperCase();
+  const isSuperAdmin = String(adminUser?.role ?? "").toLowerCase() === "super_admin";
 
-  const studentUsers = users.filter((u) => u.role === "Student");
-  const facultyUsers = users.filter((u) => u.role === "Faculty");
+  const scopedUsers = users.filter(
+    (u) => isSuperAdmin || !adminDepartment || u.departmentId === adminDepartment,
+  );
+  const studentUsers = scopedUsers.filter((u) => u.role === "Student");
+  const facultyUsers = scopedUsers.filter((u) => u.role === "Faculty");
 
   // Modal / Form state for Add Subject
   const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
-  const [newSubjName, setNewSubjName]         = useState("");
-  const [newSubjCode, setNewSubjCode]         = useState("");
-  const [newSubjSem, setNewSubjSem]           = useState("5");
-  const [newSubjFaculty, setNewSubjFaculty]   = useState(facultyUsers[0]?.name ?? "Dr. Nisha Shah");
+  const [newSubjName, setNewSubjName] = useState("");
+  const [newSubjCode, setNewSubjCode] = useState("");
+  const [newSubjSem, setNewSubjSem] = useState("5");
+  const [newSubjFaculty, setNewSubjFaculty] = useState(facultyUsers[0]?.name ?? "Dr. Nisha Shah");
   const [newSubjSyllabus, setNewSubjSyllabus] = useState("");
   const [subjAddedBanner, setSubjAddedBanner] = useState(false);
 
   // Expanded card state
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab]   = useState<Record<string, "syllabus" | "modules" | "resources" | "students">>({});
+  const [activeTab, setActiveTab] = useState<
+    Record<string, "syllabus" | "modules" | "resources" | "students">
+  >({});
 
   // Module / Resource form states
   const [newModuleName, setNewModuleName] = useState<Record<string, string>>({});
-  const [newRes, setNewRes] = useState<{ moduleId: string | null; name: string; type: ResourceType; url: string }>({
-    moduleId: null, name: "", type: "link", url: "",
+  const [newRes, setNewRes] = useState<{
+    moduleId: string | null;
+    name: string;
+    type: ResourceType;
+    url: string;
+  }>({
+    moduleId: null,
+    name: "",
+    type: "link",
+    url: "",
   });
   const [editingSyllabusId, setEditingSyllabusId] = useState<string | null>(null);
   const [syllabusEdit, setSyllabusEdit] = useState("");
@@ -71,8 +110,7 @@ function SubjectsPage() {
   const subjectModules = (sid: string) =>
     modules.filter((m) => m.subjectId === sid).sort((a, b) => a.order - b.order);
 
-  const moduleResources = (mid: string) =>
-    resources.filter((r) => r.moduleId === mid);
+  const moduleResources = (mid: string) => resources.filter((r) => r.moduleId === mid);
 
   const handleCreateSubject = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +142,12 @@ function SubjectsPage() {
 
   const handleAddResource = () => {
     if (!newRes.moduleId || !newRes.name.trim()) return;
-    addResource({ moduleId: newRes.moduleId, name: newRes.name.trim(), type: newRes.type, url: newRes.url || undefined });
+    addResource({
+      moduleId: newRes.moduleId,
+      name: newRes.name.trim(),
+      type: newRes.type,
+      url: newRes.url || undefined,
+    });
     setNewRes({ moduleId: null, name: "", type: "link", url: "" });
   };
 
@@ -188,7 +231,9 @@ function SubjectsPage() {
                     className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-violet"
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                      <option key={n} value={n}>Semester {n}</option>
+                      <option key={n} value={n}>
+                        Semester {n}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -204,7 +249,9 @@ function SubjectsPage() {
                   >
                     {facultyUsers.length > 0 ? (
                       facultyUsers.map((f) => (
-                        <option key={f.id} value={f.name}>{f.name}</option>
+                        <option key={f.id} value={f.name}>
+                          {f.name}
+                        </option>
                       ))
                     ) : (
                       <option value="Dr. Nisha Shah">Dr. Nisha Shah</option>
@@ -271,7 +318,8 @@ function SubjectsPage() {
                   <div>
                     <div className="font-serif text-lg font-bold text-foreground">{s.name}</div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
-                      {s.code} · Sem {s.semester} · {s.faculty} · {mods.length} modules · {enrolled.length} students
+                      {s.code} · Sem {s.semester} · {s.faculty} · {mods.length} modules ·{" "}
+                      {enrolled.length} students
                     </div>
                   </div>
                 </div>
@@ -311,7 +359,7 @@ function SubjectsPage() {
                           "border-b-2 px-4 py-3 text-sm font-medium capitalize transition-colors",
                           tab === t
                             ? "border-violet text-violet font-semibold"
-                            : "border-transparent text-muted-foreground hover:text-foreground"
+                            : "border-transparent text-muted-foreground hover:text-foreground",
                         )}
                       >
                         {t}
@@ -351,11 +399,18 @@ function SubjectsPage() {
                         ) : (
                           <div>
                             <p className="text-sm leading-relaxed text-muted-foreground">
-                              {s.syllabus || <span className="italic text-muted-foreground">No syllabus added yet.</span>}
+                              {s.syllabus || (
+                                <span className="italic text-muted-foreground">
+                                  No syllabus added yet.
+                                </span>
+                              )}
                             </p>
                             <button
                               type="button"
-                              onClick={() => { setEditingSyllabusId(s.id); setSyllabusEdit(s.syllabus ?? ""); }}
+                              onClick={() => {
+                                setEditingSyllabusId(s.id);
+                                setSyllabusEdit(s.syllabus ?? "");
+                              }}
                               className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-violet hover:underline"
                             >
                               <Edit3 className="h-3.5 w-3.5" /> Edit syllabus
@@ -369,19 +424,34 @@ function SubjectsPage() {
                     {tab === "modules" && (
                       <div className="space-y-3">
                         {mods.length === 0 && (
-                          <EmptyState icon={BookOpen} title="No modules yet" description="Add the first learning module below." />
+                          <EmptyState
+                            icon={BookOpen}
+                            title="No modules yet"
+                            description="Add the first learning module below."
+                          />
                         )}
                         {mods.map((mod) => (
-                          <div key={mod.id} className="flex items-center gap-3 rounded-xl border border-border bg-accent/40 px-4 py-3">
+                          <div
+                            key={mod.id}
+                            className="flex items-center gap-3 rounded-xl border border-border bg-accent/40 px-4 py-3"
+                          >
                             <GripVertical className="h-4 w-4 shrink-0 text-slate-300" />
                             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-brand/10 text-xs font-bold text-violet">
                               {mod.order}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-medium text-foreground">{mod.name}</div>
-                              {mod.description && <div className="text-xs text-muted-foreground truncate">{mod.description}</div>}
+                              {mod.description && (
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {mod.description}
+                                </div>
+                              )}
                             </div>
-                            <button type="button" onClick={() => removeModule(mod.id)} className="text-slate-300 hover:text-red-brand">
+                            <button
+                              type="button"
+                              onClick={() => removeModule(mod.id)}
+                              className="text-slate-300 hover:text-red-brand"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
@@ -390,7 +460,9 @@ function SubjectsPage() {
                         <div className="flex gap-2 pt-2">
                           <input
                             value={newModuleName[s.id] ?? ""}
-                            onChange={(e) => setNewModuleName((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                            onChange={(e) =>
+                              setNewModuleName((prev) => ({ ...prev, [s.id]: e.target.value }))
+                            }
                             onKeyDown={(e) => e.key === "Enter" && handleAddModule(s.id)}
                             placeholder="New module name, e.g. Unit 5 – Advanced Topics"
                             className="flex-1 rounded-xl border border-border bg-card px-4 py-2 text-sm outline-none focus:border-violet"
@@ -410,29 +482,58 @@ function SubjectsPage() {
                     {tab === "resources" && (
                       <div className="space-y-4">
                         {mods.length === 0 && (
-                          <EmptyState icon={Link2} title="No modules" description="Add modules first, then attach resources to them." />
+                          <EmptyState
+                            icon={Link2}
+                            title="No modules"
+                            description="Add modules first, then attach resources to them."
+                          />
                         )}
                         {mods.map((mod) => {
                           const res = moduleResources(mod.id);
                           return (
                             <div key={mod.id}>
-                              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{mod.name}</div>
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                {mod.name}
+                              </div>
                               {res.length === 0 ? (
-                                <div className="text-xs text-muted-foreground italic pl-1 mb-2">No resources yet.</div>
+                                <div className="text-xs text-muted-foreground italic pl-1 mb-2">
+                                  No resources yet.
+                                </div>
                               ) : (
                                 <div className="space-y-1.5 mb-2">
                                   {res.map((r) => {
                                     const Icon = RESOURCE_ICONS[r.type];
                                     return (
-                                      <div key={r.id} className="flex items-center gap-2.5 rounded-lg border border-border bg-accent/40 px-3 py-2">
-                                        <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs", RESOURCE_COLORS[r.type])}>
+                                      <div
+                                        key={r.id}
+                                        className="flex items-center gap-2.5 rounded-lg border border-border bg-accent/40 px-3 py-2"
+                                      >
+                                        <span
+                                          className={cn(
+                                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs",
+                                            RESOURCE_COLORS[r.type],
+                                          )}
+                                        >
                                           <Icon className="h-3.5 w-3.5" />
                                         </span>
-                                        <span className="flex-1 text-sm text-foreground truncate">{r.name}</span>
+                                        <span className="flex-1 text-sm text-foreground truncate">
+                                          {r.name}
+                                        </span>
                                         {r.url && (
-                                          <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-brand hover:underline">open</a>
+                                          <a
+                                            href={r.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs text-teal-brand hover:underline"
+                                          >
+                                            open
+                                          </a>
                                         )}
-                                        <button type="button" onClick={() => removeResource(r.id)} className="text-slate-300 hover:text-red-brand">
+                                        <button
+                                          type="button"
+                                          onClick={() => removeResource(r.id)}
+                                          className="text-slate-300 hover:text-red-brand"
+                                        >
                                           <X className="h-3.5 w-3.5" />
                                         </button>
                                       </div>
@@ -445,14 +546,21 @@ function SubjectsPage() {
                                 <div className="rounded-xl border border-violet/20 bg-indigo-brand/5 p-3 space-y-2">
                                   <input
                                     value={newRes.name}
-                                    onChange={(e) => setNewRes((p) => ({ ...p, name: e.target.value }))}
+                                    onChange={(e) =>
+                                      setNewRes((p) => ({ ...p, name: e.target.value }))
+                                    }
                                     placeholder="Resource name"
                                     className="w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-none"
                                   />
                                   <div className="flex gap-2">
                                     <select
                                       value={newRes.type}
-                                      onChange={(e) => setNewRes((p) => ({ ...p, type: e.target.value as ResourceType }))}
+                                      onChange={(e) =>
+                                        setNewRes((p) => ({
+                                          ...p,
+                                          type: e.target.value as ResourceType,
+                                        }))
+                                      }
                                       className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm"
                                     >
                                       <option value="link">Link</option>
@@ -463,16 +571,35 @@ function SubjectsPage() {
                                     </select>
                                     <input
                                       value={newRes.url}
-                                      onChange={(e) => setNewRes((p) => ({ ...p, url: e.target.value }))}
+                                      onChange={(e) =>
+                                        setNewRes((p) => ({ ...p, url: e.target.value }))
+                                      }
                                       placeholder="URL (optional)"
                                       className="flex-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-none"
                                     />
                                   </div>
                                   <div className="flex gap-2">
-                                    <button type="button" onClick={handleAddResource} className="flex items-center gap-1 rounded-lg bg-violet px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-hover">
+                                    <button
+                                      type="button"
+                                      onClick={handleAddResource}
+                                      className="flex items-center gap-1 rounded-lg bg-violet px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-hover"
+                                    >
                                       <Check className="h-3.5 w-3.5" /> Add
                                     </button>
-                                    <button type="button" onClick={() => setNewRes({ moduleId: null, name: "", type: "link", url: "" })} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setNewRes({
+                                          moduleId: null,
+                                          name: "",
+                                          type: "link",
+                                          url: "",
+                                        })
+                                      }
+                                      className="text-xs text-muted-foreground hover:text-foreground"
+                                    >
+                                      Cancel
+                                    </button>
                                   </div>
                                 </div>
                               ) : (
@@ -494,7 +621,9 @@ function SubjectsPage() {
                     {tab === "students" && (
                       <div className="space-y-2">
                         <div className="mb-3 flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">{enrolled.length} student{enrolled.length !== 1 ? "s" : ""} enrolled</span>
+                          <span className="text-sm text-muted-foreground">
+                            {enrolled.length} student{enrolled.length !== 1 ? "s" : ""} enrolled
+                          </span>
                         </div>
                         {studentUsers.map((u) => {
                           const isEnrolled = s.enrolledStudentIds.includes(u.id);
@@ -503,15 +632,24 @@ function SubjectsPage() {
                               key={u.id}
                               className={cn(
                                 "flex items-center justify-between rounded-xl border px-4 py-3 transition",
-                                isEnrolled ? "border-violet/20 bg-indigo-brand/5" : "border-border bg-accent/40"
+                                isEnrolled
+                                  ? "border-violet/20 bg-indigo-brand/5"
+                                  : "border-border bg-accent/40",
                               )}
                             >
                               <div className="flex items-center gap-3">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-brand/10 text-xs font-bold text-violet">
-                                  {u.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
+                                  {u.name
+                                    .split(" ")
+                                    .map((w) => w[0])
+                                    .join("")
+                                    .toUpperCase()
+                                    .slice(0, 2)}
                                 </div>
                                 <div>
-                                  <div className="text-sm font-medium text-foreground">{u.name}</div>
+                                  <div className="text-sm font-medium text-foreground">
+                                    {u.name}
+                                  </div>
                                   <div className="text-xs text-muted-foreground">{u.email}</div>
                                 </div>
                               </div>
@@ -519,12 +657,16 @@ function SubjectsPage() {
                                 {isEnrolled && <Pill tone="indigo">Enrolled</Pill>}
                                 <button
                                   type="button"
-                                  onClick={() => s.enrolledStudentIds.includes(u.id) ? unenrollStudent(s.id, u.id) : enrollStudent(s.id, u.id)}
+                                  onClick={() =>
+                                    s.enrolledStudentIds.includes(u.id)
+                                      ? unenrollStudent(s.id, u.id)
+                                      : enrollStudent(s.id, u.id)
+                                  }
                                   className={cn(
                                     "rounded-lg px-3 py-1.5 text-xs font-medium transition",
                                     isEnrolled
                                       ? "border border-red-200 text-red-600 hover:bg-danger/5"
-                                      : "border border-violet/30 text-violet hover:bg-indigo-brand/10"
+                                      : "border border-violet/30 text-violet hover:bg-indigo-brand/10",
                                   )}
                                 >
                                   {isEnrolled ? "Remove" : "Enrol"}

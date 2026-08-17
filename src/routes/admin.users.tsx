@@ -33,7 +33,9 @@ function ConfirmToast({ email, onDismiss }: { email: string; onDismiss: () => vo
         <div className="font-semibold text-foreground">Account created</div>
         <p className="mt-0.5 text-muted-foreground">
           Account created for <strong>{email}</strong>. Default password:{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">password1234</code>{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">
+            password1234
+          </code>{" "}
           — the user must change this on first login.
         </p>
       </div>
@@ -52,6 +54,8 @@ function ConfirmToast({ email, onDismiss }: { email: string; onDismiss: () => vo
 function UsersPage() {
   const { users, addUser, removeUser, toggleUserStatus } = useAppData();
   const { user: adminUser } = useAuth();
+  const adminDepartment = adminUser?.departmentId?.toUpperCase();
+  const isSuperAdmin = String(adminUser?.role ?? "").toLowerCase() === "super_admin";
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -64,9 +68,13 @@ function UsersPage() {
   const [addError, setAddError] = useState<string | null>(null);
 
   const filtered = users.filter((u) => {
-    const matchSearch = search === "" || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+    const sameDepartment = isSuperAdmin || !adminDepartment || u.departmentId === adminDepartment;
+    const matchSearch =
+      search === "" ||
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase());
     const matchRole = roleFilter === "all" || u.role === roleFilter;
-    return matchSearch && matchRole;
+    return sameDepartment && matchSearch && matchRole;
   });
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -75,11 +83,20 @@ function UsersPage() {
     if (!newName.trim() || !newEmail.trim()) return;
 
     const actorEmail = adminUser?.email ?? "admin@charusat.edu.in";
-    const roleForStore = newRole === "Student" ? "student" : newRole === "Faculty" ? "faculty" : "admin";
+    const roleForStore =
+      newRole === "Student" ? "student" : newRole === "Faculty" ? "faculty" : "admin";
 
     // Create directly in MongoDB Atlas via auth store & API
-    const authResult = await createUserWithDefaultPassword(newName.trim(), newEmail.trim(), roleForStore, actorEmail);
-    if (!authResult.ok) { setAddError(authResult.error ?? "Failed to create account."); return; }
+    const authResult = await createUserWithDefaultPassword(
+      newName.trim(),
+      newEmail.trim(),
+      roleForStore,
+      actorEmail,
+    );
+    if (!authResult.ok) {
+      setAddError(authResult.error ?? "Failed to create account.");
+      return;
+    }
 
     // Also update local UI table
     await addUser({
@@ -91,22 +108,32 @@ function UsersPage() {
     });
 
     setToastEmail(newEmail.trim().toLowerCase());
-    setNewName(""); setNewEmail(""); setShowAdd(false);
+    setNewName("");
+    setNewEmail("");
+    setShowAdd(false);
   };
 
   return (
     <div>
       <PageHeader
         title="Users"
-        subtitle={`${users.length} total · ${users.filter(u => u.role === "Student").length} students · ${users.filter(u => u.role === "Faculty").length} faculty`}
-        action={<PrimaryButton icon={Plus} onClick={() => { setShowAdd(true); setAddError(null); }}>Add User</PrimaryButton>}
+        subtitle={`${users.length} total · ${users.filter((u) => u.role === "Student").length} students · ${users.filter((u) => u.role === "Faculty").length} faculty`}
+        action={
+          <PrimaryButton
+            icon={Plus}
+            onClick={() => {
+              setShowAdd(true);
+              setAddError(null);
+            }}
+          >
+            Add User
+          </PrimaryButton>
+        }
       />
 
       {/* Toast */}
       <AnimatePresence>
-        {toastEmail && (
-          <ConfirmToast email={toastEmail} onDismiss={() => setToastEmail(null)} />
-        )}
+        {toastEmail && <ConfirmToast email={toastEmail} onDismiss={() => setToastEmail(null)} />}
       </AnimatePresence>
 
       {/* Role filter pills */}
@@ -120,10 +147,12 @@ function UsersPage() {
               "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
               roleFilter === r
                 ? "bg-violet text-white shadow-[0_0_12px_-3px_oklch(0.62_0.22_293_/_40%)]"
-                : "border border-border bg-card text-muted-foreground hover:border-violet/40 hover:text-foreground"
+                : "border border-border bg-card text-muted-foreground hover:border-violet/40 hover:text-foreground",
             )}
           >
-            {r === "all" ? `All (${users.length})` : `${r}s (${users.filter(u => u.role === r).length})`}
+            {r === "all"
+              ? `All (${users.length})`
+              : `${r}s (${users.filter((u) => u.role === r).length})`}
           </button>
         ))}
       </div>
@@ -146,32 +175,57 @@ function UsersPage() {
             <form onSubmit={handleAdd} className="flex flex-wrap gap-3 items-end">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-muted-foreground">Full name</label>
-                <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Priya Sharma"
-                  className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)] transition" required />
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g. Priya Sharma"
+                  className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)] transition"
+                  required
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-muted-foreground">Email</label>
-                <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="email@charusat.edu.in"
-                  className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)] transition" required />
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="email@charusat.edu.in"
+                  className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)] transition"
+                  required
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-muted-foreground">Role</label>
-                <select value={newRole} onChange={e => setNewRole(e.target.value as typeof newRole)}
-                  className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet transition">
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as typeof newRole)}
+                  className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet transition"
+                >
                   <option value="Student">Student</option>
                   <option value="Faculty">Faculty</option>
                   <option value="Admin">Admin</option>
                 </select>
               </div>
-              <button type="submit" className="rounded-xl bg-gradient-to-r from-violet to-[#7c3aed] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition">
+              <button
+                type="submit"
+                className="rounded-xl bg-gradient-to-r from-violet to-[#7c3aed] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition"
+              >
                 Create Account
               </button>
-              <button type="button" onClick={() => setShowAdd(false)} className="text-sm text-muted-foreground hover:text-foreground transition">
+              <button
+                type="button"
+                onClick={() => setShowAdd(false)}
+                className="text-sm text-muted-foreground hover:text-foreground transition"
+              >
                 Cancel
               </button>
             </form>
             <p className="mt-3 text-xs text-muted-foreground">
-              Default password <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">password1234</code> will be set. User must change it on first login.
+              Default password{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">
+                password1234
+              </code>{" "}
+              will be set. User must change it on first login.
             </p>
           </motion.div>
         )}
@@ -182,7 +236,7 @@ function UsersPage() {
         <Search className="h-4 w-4 text-muted-foreground" />
         <input
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name or email…"
           className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
         />
@@ -204,7 +258,11 @@ function UsersPage() {
             </thead>
             <tbody>
               {filtered.map((u, idx) => {
-                const rc = ROLE_COLORS[u.role] ?? { text: "text-foreground", bg: "bg-muted", ring: "" };
+                const rc = ROLE_COLORS[u.role] ?? {
+                  text: "text-foreground",
+                  bg: "bg-muted",
+                  ring: "",
+                };
                 const isDefault = u.passwordStatus === "default";
                 return (
                   <motion.tr
@@ -214,14 +272,26 @@ function UsersPage() {
                     transition={{ delay: idx * 0.03, duration: 0.15 }}
                     className={cn(
                       "border-t border-border transition hover:bg-accent/40",
-                      idx % 2 === 0 ? "" : "bg-muted/20"
+                      idx % 2 === 0 ? "" : "bg-muted/20",
                     )}
                   >
                     <td className="py-3 pr-4">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold", rc.bg, rc.text, rc.ring)}>
-                            {u.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
+                          <div
+                            className={cn(
+                              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                              rc.bg,
+                              rc.text,
+                              rc.ring,
+                            )}
+                          >
+                            {u.name
+                              .split(" ")
+                              .map((w) => w[0])
+                              .join("")
+                              .toUpperCase()
+                              .slice(0, 2)}
                           </div>
                           {u.status === "active" && (
                             <span className="online-dot absolute -bottom-0.5 -right-0.5" />
@@ -231,7 +301,13 @@ function UsersPage() {
                       </div>
                     </td>
                     <td className="py-3 pr-4">
-                      <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", rc.bg, rc.text)}>
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                          rc.bg,
+                          rc.text,
+                        )}
+                      >
                         {u.role}
                       </span>
                     </td>
@@ -258,9 +334,16 @@ function UsersPage() {
                         <button
                           onClick={() => toggleUserStatus(u.id)}
                           title={u.status === "active" ? "Deactivate user" : "Activate user"}
-                          className={cn("rounded-lg p-1.5 transition hover:bg-accent hover:text-gold", u.status === "inactive" && "text-gold")}
+                          className={cn(
+                            "rounded-lg p-1.5 transition hover:bg-accent hover:text-gold",
+                            u.status === "inactive" && "text-gold",
+                          )}
                         >
-                          {u.status === "active" ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                          {u.status === "active" ? (
+                            <UserX className="h-4 w-4" />
+                          ) : (
+                            <UserCheck className="h-4 w-4" />
+                          )}
                         </button>
                         <button
                           onClick={() => removeUser(u.id)}
@@ -275,7 +358,11 @@ function UsersPage() {
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">No users match your search.</td></tr>
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                    No users match your search.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
