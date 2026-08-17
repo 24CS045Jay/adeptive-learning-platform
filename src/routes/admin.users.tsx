@@ -13,9 +13,9 @@ export const Route = createFileRoute("/admin/users")({
 });
 
 const ROLE_COLORS: Record<string, { text: string; bg: string; ring: string }> = {
-  Student: { text: "text-violet",      bg: "bg-violet/10",       ring: "avatar-ring-violet" },
-  Faculty: { text: "text-gold",        bg: "bg-gold/10",         ring: "avatar-ring-gold" },
-  Admin:   { text: "text-teal-brand",  bg: "bg-teal-brand/10",   ring: "avatar-ring-teal" },
+  Student: { text: "text-violet", bg: "bg-violet/10", ring: "avatar-ring-violet" },
+  Faculty: { text: "text-gold", bg: "bg-gold/10", ring: "avatar-ring-gold" },
+  Admin: { text: "text-teal-brand", bg: "bg-teal-brand/10", ring: "avatar-ring-teal" },
 };
 
 // ── Confirmation Toast ────────────────────────────────────────────────────────
@@ -53,14 +53,14 @@ function UsersPage() {
   const { users, addUser, removeUser, toggleUserStatus } = useAppData();
   const { user: adminUser } = useAuth();
 
-  const [search, setSearch]         = useState("");
+  const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [showAdd, setShowAdd]       = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [toastEmail, setToastEmail] = useState<string | null>(null);
 
-  const [newName,  setNewName]  = useState("");
+  const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newRole,  setNewRole]  = useState<"Student" | "Faculty" | "Admin">("Student");
+  const [newRole, setNewRole] = useState<"Student" | "Faculty" | "Admin">("Student");
   const [addError, setAddError] = useState<string | null>(null);
 
   const filtered = users.filter((u) => {

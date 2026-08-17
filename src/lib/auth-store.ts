@@ -41,13 +41,13 @@ const DEFAULT_PASSWORD_HASH = hashPassword(DEFAULT_PASSWORD);
 
 // ─── Seeded demo users ────────────────────────────────────────────────────────
 const DEFAULT_USERS: MockUser[] = [
-  { id: "u0", name: "Amit Thakkar",     email: "hod@charusat.ac.in",      passwordHash: hashPassword("12345678"),    role: "admin",   mustChangePassword: false },
-  { id: "u1", name: "Aarav Patel",      email: "student@charusat.edu.in", passwordHash: hashPassword("student123"),  role: "student", mustChangePassword: false },
-  { id: "u2", name: "Meera Joshi",      email: "meera@charusat.edu.in",   passwordHash: hashPassword("student123"),  role: "student", mustChangePassword: false },
-  { id: "u3", name: "Kabir Singh",      email: "kabir@charusat.edu.in",   passwordHash: hashPassword("student123"),  role: "student", mustChangePassword: false },
-  { id: "u5", name: "Dr. Nisha Shah",   email: "faculty@charusat.edu.in", passwordHash: hashPassword("faculty123"),  role: "faculty", mustChangePassword: false },
-  { id: "u6", name: "Prof. Anil Kumar", email: "anil@charusat.edu.in",    passwordHash: hashPassword("faculty123"),  role: "faculty", mustChangePassword: false },
-  { id: "u8", name: "Rahul Mehta",      email: "admin@charusat.edu.in",   passwordHash: hashPassword("admin123"),    role: "admin",   mustChangePassword: false },
+  { id: "u0", name: "Amit Thakkar", email: "hod@charusat.ac.in", passwordHash: hashPassword("12345678"), role: "admin", mustChangePassword: false },
+  { id: "u1", name: "Aarav Patel", email: "student@charusat.edu.in", passwordHash: hashPassword("student123"), role: "student", mustChangePassword: false },
+  { id: "u2", name: "Meera Joshi", email: "meera@charusat.edu.in", passwordHash: hashPassword("student123"), role: "student", mustChangePassword: false },
+  { id: "u3", name: "Kabir Singh", email: "kabir@charusat.edu.in", passwordHash: hashPassword("student123"), role: "student", mustChangePassword: false },
+  { id: "u5", name: "Dr. Nisha Shah", email: "faculty@charusat.edu.in", passwordHash: hashPassword("faculty123"), role: "faculty", mustChangePassword: false },
+  { id: "u6", name: "Prof. Anil Kumar", email: "anil@charusat.edu.in", passwordHash: hashPassword("faculty123"), role: "faculty", mustChangePassword: false },
+  { id: "u8", name: "Rahul Mehta", email: "admin@charusat.edu.in", passwordHash: hashPassword("admin123"), role: "admin", mustChangePassword: false },
 ];
 
 // ─── Audit Log ────────────────────────────────────────────────────────────────
@@ -65,13 +65,13 @@ function loadAuditLog(): AuditEntry[] {
   try {
     const s = localStorage.getItem("ai_tutor_audit_log");
     if (s) return JSON.parse(s);
-  } catch {}
+  } catch { }
   return [];
 }
 
 function saveAuditLog(log: AuditEntry[]) {
   if (typeof window === "undefined") return;
-  try { localStorage.setItem("ai_tutor_audit_log", JSON.stringify(log)); } catch {}
+  try { localStorage.setItem("ai_tutor_audit_log", JSON.stringify(log)); } catch { }
 }
 
 export const AUDIT_LOG: AuditEntry[] = loadAuditLog();
@@ -114,13 +114,13 @@ function loadUsers(): MockUser[] {
       if (migrated) saveUsers(parsed);
       return parsed;
     }
-  } catch {}
+  } catch { }
   return DEFAULT_USERS;
 }
 
 function saveUsers(users: MockUser[]) {
   if (typeof window === "undefined") return;
-  try { localStorage.setItem("ai_tutor_mock_users", JSON.stringify(users)); } catch {}
+  try { localStorage.setItem("ai_tutor_mock_users", JSON.stringify(users)); } catch { }
 }
 
 export const MOCK_USERS: MockUser[] = loadUsers();

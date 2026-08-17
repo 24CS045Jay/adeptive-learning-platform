@@ -23,8 +23,8 @@ async function seedAdmin() {
     if (!adminEmail || !adminPassword) {
       console.warn(
         "\n[SECURITY WARNING] SEED_ADMIN_EMAIL or SEED_ADMIN_PASSWORD is not set in process.env!\n" +
-          "Falling back to default credentials: 'admin@charusat.edu.in' / 'admin123'\n" +
-          "PLEASE CHANGE THE ADMIN PASSWORD IMMEDIATELY AFTER FIRST LOGIN!\n"
+        "Falling back to default credentials: 'admin@charusat.edu.in' / 'admin123'\n" +
+        "PLEASE CHANGE THE ADMIN PASSWORD IMMEDIATELY AFTER FIRST LOGIN!\n"
       );
       adminEmail = adminEmail || "admin@charusat.edu.in";
       adminPassword = adminPassword || "admin123";

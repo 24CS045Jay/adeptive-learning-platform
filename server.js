@@ -3,24 +3,24 @@ import express from "express";
 import cors from "cors";
 import { connectMongo } from "./db/mongo.js";
 
-import authRoutes          from "./routes/auth.js";
-import userRoutes          from "./routes/users.js";
-import subjectRoutes       from "./routes/subjects.js";
-import documentRoutes      from "./routes/documents.js";
-import tutorRoutes         from "./routes/tutor.js";
-import quizRoutes          from "./routes/quizzes.js";
-import announcementRoutes  from "./routes/announcements.js";
-import escalationRoutes    from "./routes/escalations.js";
-import moduleRoutes        from "./routes/modules.js";
-import resourceRoutes      from "./routes/resources.js";
-import notificationRoutes  from "./routes/notifications.js";
-import discussionRoutes    from "./routes/discussions.js";
-import feedbackRoutes      from "./routes/feedback.js";
-import conceptGraphRoutes  from "./routes/concept-graph.js";
-import analyticsRoutes     from "./routes/analytics.js";
-import conversationRoutes  from "./routes/conversations.js";
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/users.js";
+import subjectRoutes from "./routes/subjects.js";
+import documentRoutes from "./routes/documents.js";
+import tutorRoutes from "./routes/tutor.js";
+import quizRoutes from "./routes/quizzes.js";
+import announcementRoutes from "./routes/announcements.js";
+import escalationRoutes from "./routes/escalations.js";
+import moduleRoutes from "./routes/modules.js";
+import resourceRoutes from "./routes/resources.js";
+import notificationRoutes from "./routes/notifications.js";
+import discussionRoutes from "./routes/discussions.js";
+import feedbackRoutes from "./routes/feedback.js";
+import conceptGraphRoutes from "./routes/concept-graph.js";
+import analyticsRoutes from "./routes/analytics.js";
+import conversationRoutes from "./routes/conversations.js";
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 5000;
 
 const RAG_SERVICE_URL = process.env.RAG_SERVICE_URL || "http://localhost:8001";
@@ -36,21 +36,21 @@ app.get("/api/health", (req, res) => {
 });
 
 // REST API Routes
-app.use("/api/auth",          authRoutes);
-app.use("/api/users",         userRoutes);
-app.use("/api/subjects",      subjectRoutes);
-app.use("/api/documents",     documentRoutes);
-app.use("/api/tutor",         tutorRoutes);
-app.use("/api/quizzes",       quizRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/documents", documentRoutes);
+app.use("/api/tutor", tutorRoutes);
+app.use("/api/quizzes", quizRoutes);
 app.use("/api/announcements", announcementRoutes);
-app.use("/api/escalations",   escalationRoutes);
-app.use("/api/modules",       moduleRoutes);
-app.use("/api/resources",     resourceRoutes);
+app.use("/api/escalations", escalationRoutes);
+app.use("/api/modules", moduleRoutes);
+app.use("/api/resources", resourceRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/discussions",   discussionRoutes);
-app.use("/api/feedback",      feedbackRoutes);
+app.use("/api/discussions", discussionRoutes);
+app.use("/api/feedback", feedbackRoutes);
 app.use("/api/concept-graph", conceptGraphRoutes);
-app.use("/api/analytics",     analyticsRoutes);
+app.use("/api/analytics", analyticsRoutes);
 app.use("/api/conversations", conversationRoutes);
 
 // Global Error Handler
