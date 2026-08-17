@@ -1,16 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, UserCheck, UserX, Search, KeyRound, CheckCircle2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Plus, Trash2, UserCheck, UserX, Search, CheckCircle2, KeyRound, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader, Card, Pill, statusTone } from "@/components/app-shell";
 import { useAppData } from "@/lib/app-data-context";
 import { useAuth } from "@/lib/auth";
+import { createUserWithDefaultPassword } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/users")({
   component: UsersPage,
 });
+
+const DEPARTMENTS = [
+  { code: "CE", label: "Computer Engineering" },
+  { code: "CSE", label: "Computer Science & Engineering" },
+  { code: "IT", label: "Information Technology" },
+  { code: "EC", label: "Electronics & Communication" },
+  { code: "AIML", label: "AI & Machine Learning" },
+];
 
 const ROLE_COLORS: Record<string, { text: string; bg: string; ring: string }> = {
   Student: { text: "text-violet", bg: "bg-violet/10", ring: "avatar-ring-violet" },
@@ -18,16 +27,58 @@ const ROLE_COLORS: Record<string, { text: string; bg: string; ring: string }> = 
   Admin: { text: "text-teal-brand", bg: "bg-teal-brand/10", ring: "avatar-ring-teal" },
 };
 
+// ── Confirmation Toast ────────────────────────────────────────────────────────
+function ConfirmToast({ email, onDismiss }: { email: string; onDismiss: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -14, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.97 }}
+      transition={{ duration: 0.2 }}
+      className="mb-5 flex items-start gap-3 rounded-2xl border border-success/30 bg-success/8 p-4"
+    >
+      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
+      <div className="flex-1 text-sm">
+        <div className="font-semibold text-foreground">Account created</div>
+        <p className="mt-0.5 text-muted-foreground">
+          Account created for <strong>{email}</strong>. Default password:{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">
+            password1234
+          </code>{" "}
+          — the user must change this on first login.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="text-muted-foreground hover:text-foreground transition"
+        aria-label="Dismiss"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </motion.div>
+  );
+}
+
 function UsersPage() {
-  const { users, removeUser, toggleUserStatus } = useAppData();
+  const { users, addUser, removeUser, toggleUserStatus } = useAppData();
   const { user: adminUser } = useAuth();
   const adminDepartment = adminUser?.departmentId?.toUpperCase();
   const isSuperAdmin = String(adminUser?.role ?? "").toLowerCase() === "super_admin";
 
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [directoryRole, setDirectoryRole] = useState<"all" | "Student" | "Faculty" | "Admin">(
     "all",
   );
+  const [showAdd, setShowAdd] = useState(false);
+  const [toastEmail, setToastEmail] = useState<string | null>(null);
+
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState<"Student" | "Faculty" | "Admin">("Student");
+  const [newDepartment, setNewDepartment] = useState(adminDepartment ?? "CSE");
+  const [addError, setAddError] = useState<string | null>(null);
 
   const filtered = users.filter((u) => {
     const sameDepartment = isSuperAdmin || !adminDepartment || u.departmentId === adminDepartment;
@@ -35,9 +86,56 @@ function UsersPage() {
       search === "" ||
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase());
+    const matchRole = roleFilter === "all" || u.role === roleFilter;
     const matchDirectoryRole = directoryRole === "all" || u.role === directoryRole;
-    return sameDepartment && matchSearch && matchDirectoryRole;
+    return sameDepartment && matchSearch && matchRole && matchDirectoryRole;
   });
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddError(null);
+    if (!newName.trim() || !newEmail.trim()) return;
+
+    const actorEmail = adminUser?.email ?? "admin@charusat.edu.in";
+    const departmentForStore = isSuperAdmin ? newDepartment : adminDepartment;
+    if (!departmentForStore) {
+      setAddError(
+        "Your admin account is not assigned to a department. Ask a super admin to assign one.",
+      );
+      return;
+    }
+    const roleForStore =
+      newRole === "Student" ? "student" : newRole === "Faculty" ? "faculty" : "admin";
+
+    // Create directly in MongoDB Atlas via auth store & API
+    const authResult = await createUserWithDefaultPassword(
+      newName.trim(),
+      newEmail.trim(),
+      roleForStore,
+      actorEmail,
+      adminUser?.token,
+      departmentForStore,
+    );
+    if (!authResult.ok) {
+      setAddError(authResult.error ?? "Failed to create account.");
+      return;
+    }
+
+    // Also update local UI table
+    await addUser({
+      name: newName.trim(),
+      email: newEmail.trim().toLowerCase(),
+      role: newRole,
+      status: "active",
+      passwordStatus: "default",
+      departmentId: departmentForStore,
+    });
+
+    setToastEmail(newEmail.trim().toLowerCase());
+    setNewName("");
+    setNewEmail("");
+    setShowAdd(false);
+  };
 
   return (
     <div>
@@ -54,6 +152,128 @@ function UsersPage() {
           </Link>
         }
       />
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toastEmail && <ConfirmToast email={toastEmail} onDismiss={() => setToastEmail(null)} />}
+      </AnimatePresence>
+
+      {/* Account creation zone */}
+      <section className="mb-8 rounded-3xl border border-violet/20 bg-gradient-to-br from-violet/10 via-card to-card p-5 shadow-[0_16px_40px_-24px_oklch(0.62_0.22_293_/_45%)]">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet">
+              Workspace action
+            </div>
+            <h2 className="mt-1 font-serif text-xl font-bold text-foreground">Add new account</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Create a department-scoped account with the default onboarding password.
+            </p>
+          </div>
+          <div className="hidden rounded-2xl border border-violet/20 bg-violet/10 px-3 py-2 text-right sm:block">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-violet">
+              Scope
+            </div>
+            <div className="mt-0.5 text-sm font-bold text-foreground">
+              {adminDepartment ?? "Global"}
+            </div>
+          </div>
+        </div>
+
+        {/* Add user form */}
+        <AnimatePresence>
+          {showAdd && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mb-5 rounded-2xl border border-violet/20 bg-violet/5 p-5"
+            >
+              <div className="mb-3 text-sm font-semibold text-foreground">New Account</div>
+              {addError && (
+                <div className="mb-3 rounded-xl border border-danger/30 bg-danger/8 px-3 py-2 text-sm text-danger">
+                  ⚠ {addError}
+                </div>
+              )}
+              <form onSubmit={handleAdd} className="flex flex-wrap gap-3 items-end">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Full name</label>
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="e.g. Priya Sharma"
+                    className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)] transition"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Email</label>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="email@charusat.edu.in"
+                    className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet focus:shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)] transition"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Role</label>
+                  <select
+                    value={newRole}
+                    onChange={(e) => setNewRole(e.target.value as typeof newRole)}
+                    className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet transition"
+                  >
+                    <option value="Student">Student</option>
+                    <option value="Faculty">Faculty</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Department</label>
+                  {isSuperAdmin ? (
+                    <select
+                      value={newDepartment}
+                      onChange={(e) => setNewDepartment(e.target.value)}
+                      className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-violet transition"
+                    >
+                      {DEPARTMENTS.map((department) => (
+                        <option key={department.code} value={department.code}>
+                          {department.code} · {department.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm text-foreground">
+                      {adminDepartment ?? "Not assigned"}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-violet to-[#7c3aed] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition"
+                >
+                  Create Account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAdd(false)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition"
+                >
+                  Cancel
+                </button>
+              </form>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Default password{" "}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">
+                  password1234
+                </code>{" "}
+                will be set. User must change it on first login.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
 
       {/* Directory zone */}
       <section className="rounded-3xl border border-border bg-card/70 p-5 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.28)]">
