@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Plus, Trash2, UserCheck, UserX, Search, CheckCircle2, KeyRound, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PageHeader, Card, Pill, PrimaryButton, statusTone } from "@/components/app-shell";
+import { PageHeader, Card, Pill, statusTone } from "@/components/app-shell";
 import { useAppData } from "@/lib/app-data-context";
 import { useAuth } from "@/lib/auth";
 import { createUserWithDefaultPassword } from "@/lib/auth-store";
@@ -142,15 +143,13 @@ function UsersPage() {
         title="User Administration"
         subtitle={`${filtered.length} visible accounts · ${adminDepartment ?? "All departments"} scope`}
         action={
-          <PrimaryButton
-            icon={Plus}
-            onClick={() => {
-              setShowAdd(true);
-              setAddError(null);
-            }}
+          <Link
+            to="/admin/users/add"
+            className="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-[#9d72f7] hover:to-[#8b5cf6]"
           >
+            <Plus className="h-4 w-4" />
             Add User
-          </PrimaryButton>
+          </Link>
         }
       />
 
