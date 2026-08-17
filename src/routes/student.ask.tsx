@@ -1,10 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useId, useRef } from "react";
 import {
-  Send, Sparkles, Sliders,
-  FileText, History, Plus, Trash2,
-  BookOpen, ThumbsUp, ThumbsDown, CheckCircle2,
-  AlertTriangle, ExternalLink, Code2,
+  Send,
+  Sparkles,
+  Sliders,
+  FileText,
+  History,
+  Plus,
+  Trash2,
+  BookOpen,
+  ThumbsUp,
+  ThumbsDown,
+  CheckCircle2,
+  AlertTriangle,
+  ExternalLink,
+  Code2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -12,6 +22,7 @@ import { PageHeader, Card } from "@/components/app-shell";
 import { useAppData } from "@/lib/app-data-context";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api";
 import { MermaidRenderer } from "@/components/MermaidRenderer";
 
 export const Route = createFileRoute("/student/ask")({
@@ -23,7 +34,11 @@ export const Route = createFileRoute("/student/ask")({
 export type VisualData =
   | { type: "flowchart"; steps: string[] }
   | { type: "comparison_chart"; categories: string[]; values: number[]; label?: string }
-  | { type: "concept_map"; nodes: string[]; edges: { from: string; to: string; relation?: string }[] }
+  | {
+      type: "concept_map";
+      nodes: string[];
+      edges: { from: string; to: string; relation?: string }[];
+    }
   | null;
 
 interface SourceChip {
@@ -66,9 +81,6 @@ interface ChatSession {
   messages: ChatMessage[];
 }
 
-// ── Backend base URL ────────────────────────────────────────────────────────
-const API_BASE = "http://localhost:5000";
-
 // ── Typing indicator ──────────────────────────────────────────────────────────
 function TypingIndicator() {
   const dotColors = ["bg-violet", "bg-gold", "bg-success"];
@@ -79,10 +91,7 @@ function TypingIndicator() {
       </div>
       <div className="flex items-center gap-1.5">
         {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className={cn("typing-dot h-2.5 w-2.5 rounded-full", dotColors[i])}
-          />
+          <span key={i} className={cn("typing-dot h-2.5 w-2.5 rounded-full", dotColors[i])} />
         ))}
       </div>
       <span className="text-xs text-muted-foreground italic">Thinking & structuring…</span>
@@ -128,9 +137,7 @@ function VisualRenderer({ visual }: { visual: VisualData }) {
       nodeMap[n] = `N${i}`;
     });
 
-    const nodesDef = nodes
-      .map((n, i) => `  N${i}["${n.replace(/"/g, "'")}"]`)
-      .join("\n");
+    const nodesDef = nodes.map((n, i) => `  N${i}["${n.replace(/"/g, "'")}"]`).join("\n");
 
     const edgesDef = edges
       .map((e) => {
@@ -208,7 +215,13 @@ function VisualRenderer({ visual }: { visual: VisualData }) {
 }
 
 // ── Source chip ───────────────────────────────────────────────────────────────
-function SourceChipBadge({ source, onClick }: { source: SourceChip; onClick: (s: SourceChip) => void }) {
+function SourceChipBadge({
+  source,
+  onClick,
+}: {
+  source: SourceChip;
+  onClick: (s: SourceChip) => void;
+}) {
   return (
     <button
       type="button"
@@ -361,7 +374,7 @@ function AskTutorPage() {
   useEffect(() => {
     if (!activeSession) return;
     const subj = subjects.find(
-      (s) => s.id === activeSession.subjectId || s.name === activeSession.subject
+      (s) => s.id === activeSession.subjectId || s.name === activeSession.subject,
     );
     if (subj) {
       setSelectedSubjectId(subj.id);
@@ -399,9 +412,7 @@ function AskTutorPage() {
               : "",
           }));
 
-          setSessions((prev) =>
-            prev.map((s) => (s.id === sessId ? { ...s, messages: msgs } : s))
-          );
+          setSessions((prev) => prev.map((s) => (s.id === sessId ? { ...s, messages: msgs } : s)));
         }
       } catch (err) {
         console.error("[Ask Tutor] Failed to load session messages:", err);
@@ -445,8 +456,8 @@ function AskTutorPage() {
       setSelectedSubjectCode(subj.code);
       setSessions((prev) =>
         prev.map((s) =>
-          s.id === activeSessionId ? { ...s, subject: subj.name, subjectId: subj.id } : s
-        )
+          s.id === activeSessionId ? { ...s, subject: subj.name, subjectId: subj.id } : s,
+        ),
       );
     }
   };
@@ -472,7 +483,7 @@ function AskTutorPage() {
         const newTitle =
           s.messages.length === 0 ? q.slice(0, 30) + (q.length > 30 ? "…" : "") : s.title;
         return { ...s, title: newTitle, messages: [...s.messages, userMsg] };
-      })
+      }),
     );
 
     addQuery({
@@ -547,7 +558,7 @@ function AskTutorPage() {
           mongoId: apiResp?.conversationId || s.mongoId,
           messages: [...s.messages, aiMsg],
         };
-      })
+      }),
     );
     setIsProcessing(false);
   };
@@ -565,7 +576,7 @@ function AskTutorPage() {
               "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all",
               showControls
                 ? "border-violet bg-violet/5 text-violet shadow-[0_0_0_3px_oklch(0.62_0.22_293_/_12%)]"
-                : "border-border bg-card text-muted-foreground hover:border-violet/40"
+                : "border-border bg-card text-muted-foreground hover:border-violet/40",
             )}
           >
             <Sliders className="h-4 w-4" />
@@ -633,7 +644,7 @@ function AskTutorPage() {
                     "group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 transition text-xs",
                     active
                       ? "bg-violet text-white font-medium shadow-[0_0_14px_-4px_oklch(0.62_0.22_293_/_50%)]"
-                      : "bg-card text-foreground hover:bg-accent border border-border"
+                      : "bg-card text-foreground hover:bg-accent border border-border",
                   )}
                 >
                   <div className="min-w-0 pr-2">
@@ -641,7 +652,7 @@ function AskTutorPage() {
                     <div
                       className={cn(
                         "text-[11px] truncate mt-0.5",
-                        active ? "text-violet-200 opacity-80" : "text-muted-foreground"
+                        active ? "text-violet-200 opacity-80" : "text-muted-foreground",
                       )}
                     >
                       {s.subject} · {s.messages.length} msgs
@@ -654,7 +665,7 @@ function AskTutorPage() {
                       "opacity-0 group-hover:opacity-100 transition p-1 rounded",
                       active
                         ? "hover:bg-white/20 text-white"
-                        : "hover:text-danger text-muted-foreground"
+                        : "hover:text-danger text-muted-foreground",
                     )}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -714,11 +725,7 @@ function AskTutorPage() {
                 ) : (
                   <AnimatePresence initial={false}>
                     {activeSession.messages.map((msg) => (
-                      <ChatMessageBubble
-                        key={msg.id}
-                        msg={msg}
-                        onSourceClick={setSelectedSource}
-                      />
+                      <ChatMessageBubble key={msg.id} msg={msg} onSourceClick={setSelectedSource} />
                     ))}
                   </AnimatePresence>
                 )}
@@ -821,7 +828,7 @@ function ChatMessageBubble({
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 shadow-sm mt-1",
           isEscalated
             ? "bg-amber-500/15 ring-amber-500/25 shadow-amber-500/20"
-            : "bg-violet/15 ring-violet/25 shadow-[0_0_10px_-2px_oklch(0.62_0.22_293_/_30%)]"
+            : "bg-violet/15 ring-violet/25 shadow-[0_0_10px_-2px_oklch(0.62_0.22_293_/_30%)]",
         )}
       >
         {isEscalated ? (
@@ -837,7 +844,7 @@ function ChatMessageBubble({
             "rounded-2xl rounded-tl-sm border p-5 shadow-sm space-y-3",
             isEscalated
               ? "border-amber-500/20 bg-amber-500/5 chat-escalated-bubble"
-              : "border-violet/15 bg-card chat-ai-bubble"
+              : "border-violet/15 bg-card chat-ai-bubble",
           )}
           style={{
             boxShadow: isEscalated
@@ -865,8 +872,8 @@ function ChatMessageBubble({
                   msg.confidence >= 0.75
                     ? "bg-success/10 text-success"
                     : msg.confidence >= 0.55
-                    ? "bg-violet/10 text-violet"
-                    : "bg-gold/10 text-gold"
+                      ? "bg-violet/10 text-violet"
+                      : "bg-gold/10 text-gold",
                 )}
               >
                 Confidence: {Math.round(msg.confidence * 100)}%
@@ -878,7 +885,7 @@ function ChatMessageBubble({
           <div
             className={cn(
               "text-sm leading-relaxed whitespace-pre-line font-sans",
-              isEscalated ? "text-amber-900 dark:text-amber-100" : "text-foreground"
+              isEscalated ? "text-amber-900 dark:text-amber-100" : "text-foreground",
             )}
           >
             {msg.text}
@@ -932,7 +939,7 @@ function ChatMessageBubble({
                     "flex items-center gap-1 rounded-lg border px-2.5 py-1 transition",
                     rated === "up"
                       ? "border-success bg-success/10 text-success font-bold"
-                      : "border-border bg-card text-muted-foreground hover:border-success hover:text-success"
+                      : "border-border bg-card text-muted-foreground hover:border-success hover:text-success",
                   )}
                 >
                   <ThumbsUp className="h-3.5 w-3.5" /> Yes
@@ -947,7 +954,7 @@ function ChatMessageBubble({
                     "flex items-center gap-1 rounded-lg border px-2.5 py-1 transition",
                     rated === "down"
                       ? "border-danger bg-danger/10 text-danger font-bold"
-                      : "border-border bg-card text-muted-foreground hover:border-danger hover:text-danger"
+                      : "border-border bg-card text-muted-foreground hover:border-danger hover:text-danger",
                   )}
                 >
                   <ThumbsDown className="h-3.5 w-3.5" /> No

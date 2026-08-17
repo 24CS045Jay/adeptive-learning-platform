@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: adeptive-learning-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm run server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: RAG_SERVICE_URL
+        fromService:
+          type: web
+          name: adeptive-learning-rag
+          property: host
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CONFIDENCE_THRESHOLD
+        value: "0.55"
+
+  - type: web
+    name: adeptive-learning-rag
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: ml_service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    disk:
+      name: chroma-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: CHROMA_PERSIST_DIR
+        value: /var/data/chroma
+      - key: CONFIDENCE_THRESHOLD
+        value: "0.55"

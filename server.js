@@ -23,10 +23,32 @@ import conversationRoutes from "./routes/conversations.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const RAG_SERVICE_URL = process.env.RAG_SERVICE_URL || "http://localhost:8001";
+const configuredRagServiceUrl = process.env.RAG_SERVICE_URL || "http://localhost:8001";
+const RAG_SERVICE_URL = /^https?:\/\//i.test(configuredRagServiceUrl)
+  ? configuredRagServiceUrl
+  : `https://${configuredRagServiceUrl}`;
+const allowedOrigins = (
+  process.env.CORS_ORIGINS ||
+  process.env.FRONTEND_URL ||
+  "http://localhost:5173"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 // Middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow server-to-server requests and local CLI/test calls without an Origin header.
+      if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS origin not allowed: ${origin}`));
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -72,14 +94,14 @@ async function checkRagServiceHealth() {
     } else {
       console.warn(
         `[Startup] ⚠️  Python RAG service returned HTTP ${res.status} — ` +
-        `Ask Tutor will degrade gracefully until the service is healthy.`
+          `Ask Tutor will degrade gracefully until the service is healthy.`,
       );
     }
   } catch {
     console.warn(
       `[Startup] ⚠️  Python RAG service is UNREACHABLE at ${RAG_SERVICE_URL}\n` +
-      `         → Make sure the Python service is running: cd ml_service && uvicorn main:app --port 8001\n` +
-      `         → Ask Tutor will still escalate gracefully, but no real answers will be generated.`
+        `         → Make sure the Python service is running: cd ml_service && uvicorn main:app --port 8001\n` +
+        `         → Ask Tutor will still escalate gracefully, but no real answers will be generated.`,
     );
   }
 }
@@ -91,8 +113,9 @@ async function startServer() {
   // Non-blocking health check — a warning, never a crash
   checkRagServiceHealth();
 
-  app.listen(PORT, () => {
-    console.log(`[Express Backend] Server running on http://localhost:${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[Express Backend] Server listening on port ${PORT}`);
+    console.log(`[Express Backend] Allowed web origins: ${allowedOrigins.join(", ")}`);
   });
 }
 
