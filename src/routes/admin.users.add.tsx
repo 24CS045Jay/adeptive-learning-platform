@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { PageHeader, Card, PrimaryButton } from "@/components/app-shell";
-import { useAppData } from "@/lib/app-data-context";
 import { useAuth } from "@/lib/auth";
 import { createUserWithDefaultPassword } from "@/lib/auth-store";
 
@@ -21,7 +20,6 @@ const DEPARTMENTS = [
 type AccountRole = "Student" | "Faculty" | "Admin";
 
 function AddUserPage() {
-  const { addUser } = useAppData();
   const { user: adminUser } = useAuth();
   const adminDepartment = adminUser?.departmentId?.toUpperCase();
   const isSuperAdmin = String(adminUser?.role ?? "").toLowerCase() === "super_admin";
@@ -65,15 +63,6 @@ function AddUserPage() {
       return;
     }
 
-    await addUser({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role,
-      status: "active",
-      passwordStatus: "default",
-      departmentId: departmentForStore,
-    });
-
     setSuccess(email.trim().toLowerCase());
     setName("");
     setEmail("");
@@ -87,11 +76,11 @@ function AddUserPage() {
         subtitle="Create a department-scoped student, faculty member, or admin account."
         action={
           <Link
-            to="/admin/users"
+            to="/admin"
             className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-semibold text-muted-foreground transition hover:border-violet/40 hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            User records
+            Back to dashboard
           </Link>
         }
       />
