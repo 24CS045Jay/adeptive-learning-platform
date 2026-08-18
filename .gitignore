@@ -46,3 +46,7 @@ __pycache__/
 *.pyc
 *.pyo
 ml_service/__pycache__/
+
+# Phase 1 backend environment
+backend/.venv/
+backend/**/__pycache__/
